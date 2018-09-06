@@ -26,7 +26,7 @@ POP_SIZE = 100
 N_PROG = 10
 
 # Number of lucky chromosomes to be selected for breeding (to maintain genetic variability)
-LUCKY_ONES = 2
+LUCKY_ONES = 0
 
 # Number of sons by each pair of parents
 N_SONS = int(POP_SIZE/N_PROG)
@@ -35,9 +35,10 @@ N_SONS = int(POP_SIZE/N_PROG)
 N_GEN = 100
 
 # Mutation rate
-MUT_RATE = 0.1
+MUT_RATE = 0.10
 
-N_GENES = 7
+# Number of genes (this can't be tweaked without making other changes to the code)
+N_GENES = 5
 
 #############################################################################
 
@@ -48,10 +49,8 @@ def randPopulation():
 		randChromo =   [uniform(3.0, 99.0),
 						uniform(0.01, 2.0),
 						uniform(3.0, 99.0),
-						uniform(0.01, 2.0),
 						uniform(-1.0, 1.0),
-						uniform(0.01, 1.0),
-						uniform(1.0, 10.0)]
+						uniform(0.01, 1.0)]
 
 		pop.append(Individual(randChromo))
 
@@ -153,13 +152,9 @@ def mutation(chromosome):
 			elif i == 2:
 				chromosome[i] = uniform(3.0, 99.0)
 			elif i == 3:
-				chromosome[i] = uniform(0.01, 2.0)
-			elif i == 4:
 				chromosome[i] = uniform(-1.0, 1.0)
-			elif i == 5:
+			elif i == 4:
 				chromosome[i] = uniform(0.01, 1.0)
-			elif i == 6:
-				chromosome[i] = uniform(1.0, 10.0)
 
 # Gives birth to a whole new generation
 def newGen(progenitors):
@@ -177,31 +172,50 @@ def newGen(progenitors):
 		else:
 			elite = False
 
-		# Generating 10 sons
-		newPop.append( Individual( geneticCrossover(progenitors[i].chromosome, progenitors[i+1].chromosome, elite, 'A')    )) # 1
-		newPop.append( Individual( geneticCrossover(progenitors[i].chromosome, progenitors[i+1].chromosome, elite, 'B')    )) # 1
-		newPop.append( Individual( arithmeticCrossover(progenitors[i].chromosome, progenitors[i+1].chromosome, elite, 'A') )) # 1
-		newPop.append( Individual( arithmeticCrossover(progenitors[i].chromosome, progenitors[i+1].chromosome, elite, 'B') )) # 1
-		newPop.append( Individual( arithmeticCrossover(progenitors[i].chromosome, progenitors[i+1].chromosome, elite, 'C') )) # 1
-		newPop.append( Individual( coinflipCrossover(progenitors[i].chromosome, progenitors[i+1].chromosome, elite)    )) # 1
-		newPop.append( Individual( coinflipCrossover(progenitors[i].chromosome, progenitors[i+1].chromosome, elite)    )) # 1
-		newPop.append( Individual( coinflipCrossover(progenitors[i].chromosome, progenitors[i+1].chromosome, elite)    )) # 1
-		newPop.append( Individual( coinflipCrossover(progenitors[i].chromosome, progenitors[i+1].chromosome, elite)    )) # 1
-		newPop.append( Individual( coinflipCrossover(progenitors[i].chromosome, progenitors[i+1].chromosome, elite)    )) # 1
+		for j in range(1):
+
+			# Generating 10 chromosomes:
+
+			# Genetic crossover:
+			for k in range(5):
+				newPop.append( Individual( geneticCrossover(progenitors[i].chromosome, progenitors[i+1].chromosome, elite, 'A')    )) # 1
+				newPop.append( Individual( geneticCrossover(progenitors[i].chromosome, progenitors[i+1].chromosome, elite, 'B')    )) # 1
+
+			# Arithmetic crossover:
+			for k in range(3):
+				newPop.append( Individual( arithmeticCrossover(progenitors[i].chromosome, progenitors[i+1].chromosome, elite, 'A') )) # 1
+				newPop.append( Individual( arithmeticCrossover(progenitors[i].chromosome, progenitors[i+1].chromosome, elite, 'B') )) # 1
+				newPop.append( Individual( arithmeticCrossover(progenitors[i].chromosome, progenitors[i+1].chromosome, elite, 'C') )) # 1
+			newPop.append( Individual( arithmeticCrossover(progenitors[i].chromosome, progenitors[i+1].chromosome, elite, 'C') )) # 1
+			
+			# Coinflip crossover:		
+			# for k in range(10):
+			# 	newPop.append( Individual( coinflipCrossover(progenitors[i].chromosome, progenitors[i+1].chromosome, elite)    )) # 1
 
 	elite = True
 
-	# Generating 10 sons
-	newPop.append( Individual( geneticCrossover(progenitors[0].chromosome, progenitors[N_PROG-1].chromosome, elite, 'A')    )) # 1
-	newPop.append( Individual( geneticCrossover(progenitors[0].chromosome, progenitors[N_PROG-1].chromosome, elite, 'B')    )) # 1
-	newPop.append( Individual( arithmeticCrossover(progenitors[0].chromosome, progenitors[N_PROG-1].chromosome, elite, 'A') )) # 1
-	newPop.append( Individual( arithmeticCrossover(progenitors[0].chromosome, progenitors[N_PROG-1].chromosome, elite, 'B') )) # 1
-	newPop.append( Individual( arithmeticCrossover(progenitors[0].chromosome, progenitors[N_PROG-1].chromosome, elite, 'C') )) # 1
-	newPop.append( Individual( coinflipCrossover(progenitors[0].chromosome, progenitors[N_PROG-1].chromosome, elite)    )) # 1
-	newPop.append( Individual( coinflipCrossover(progenitors[0].chromosome, progenitors[N_PROG-1].chromosome, elite)    )) # 1
-	newPop.append( Individual( coinflipCrossover(progenitors[0].chromosome, progenitors[N_PROG-1].chromosome, elite)    )) # 1
-	newPop.append( Individual( coinflipCrossover(progenitors[0].chromosome, progenitors[N_PROG-1].chromosome, elite)    )) # 1
-	newPop.append( Individual( coinflipCrossover(progenitors[0].chromosome, progenitors[N_PROG-1].chromosome, elite)    )) # 1
+	for j in range(1):
+
+		# Generates 10 chromosomes:
+
+		# # Genetic crossover:
+		# for k in range(5):		for k in range(5):
+		# 	newPop.append( Individual( geneticCrossover(progenitors[0].chromosome, progenitors[N_PROG-1].chromosome, elite, 'A')    )) # 1
+		# 	newPop.append( Individual( geneticCrossover(progenitors[0].chromosome, progenitors[N_PROG-1].chromosome, elite, 'B')    )) # 1
+
+		# 	newPop.append( Individual( geneticCrossover(progenitors[0].chromosome, progenitors[N_PROG-1].chromosome, elite, 'A')    )) # 1
+		# 	newPop.append( Individual( geneticCrossover(progenitors[0].chromosome, progenitors[N_PROG-1].chromosome, elite, 'B')    )) # 1
+		
+		# Arithmetic crossover:
+		for k in range(3):
+			newPop.append( Individual( arithmeticCrossover(progenitors[0].chromosome, progenitors[N_PROG-1].chromosome, elite, 'A') )) # 1
+			newPop.append( Individual( arithmeticCrossover(progenitors[0].chromosome, progenitors[N_PROG-1].chromosome, elite, 'B') )) # 1
+			newPop.append( Individual( arithmeticCrossover(progenitors[0].chromosome, progenitors[N_PROG-1].chromosome, elite, 'C') )) # 1
+		newPop.append( Individual( arithmeticCrossover(progenitors[0].chromosome, progenitors[N_PROG-1].chromosome, elite, 'C') )) # 1
+
+		# Coinflip crossover:
+		# for k in range(10):
+			# newPop.append( Individual( coinflipCrossover(progenitors[0].chromosome, progenitors[N_PROG-1].chromosome, elite)    )) # 1
 
 	return newPop
 
@@ -248,5 +262,6 @@ if __name__ == '__main__':
 		# This generations best chromosome gets the chance to show its abilities
 		visualization.play( progenitors[0].chromosome, n)
 
+	input('a')
 	# Visualize the best of the best
 	visualization.play( progenitors[0].chromosome, n)

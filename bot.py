@@ -25,11 +25,9 @@ class Individual(object):
 		w2   = self.chromosome[1] # 0.01 <=  w2   <= 2.00
 
 		f1   = self.chromosome[2] # 3.00 <=  f1   <= 99.0
-		f2   = self.chromosome[3] # 0.01 <=  f2   <= 2.00
-		f3   = self.chromosome[4] # -1.0 <=  f3   <= 1.00
+		f2   = self.chromosome[3] # -1.0 <=  f3   <= 1.00
 		
-		fxw1 = self.chromosome[5] # 0.01 <=  fxw1 <= 1.00
-		fxw2 = self.chromosome[6] # 1.00 <=  fxw2 <= 10.0
+		fxw1 = self.chromosome[4] # 0.01 <=  fxw1 <= 1.00
 
 		frontWall = self.data[0] # Normalized distance to wall to the front
 		leftWall  = self.data[1] # Normalized distance to wall to the left
@@ -42,12 +40,11 @@ class Individual(object):
 
 		# Probability of turning this game tick (main controller function)
 
-		# turnProb = (  (( ((1-frontWall)**w1)*w2 ) * ( (abs(foodAngle)**f1)*f2 )) - ( (1-frontWall)*foodAngle)*(fxw1**fxw2) )
-		turnProb = (  (( ((1-frontWall)**w1) * w2) * ( (abs(foodAngle)*f1) ))  - ( (1-frontWall)*foodAngle)*(fxw1)**3 )
+		turnProb = (  (( ((1-frontWall)**w1) * w2) * ( (abs(foodAngle)*f1) ))  - ( ((1-frontWall)*foodAngle) *fxw1 ) )
 
 		# If the action is taken, probability of what is the side to turn
-		leftProb  = leftWall + (f3*foodAngle)
-		rightProb = rightWall + (f3*foodAngle)
+		leftProb  = leftWall + (f2*foodAngle)
+		rightProb = rightWall + (f2*foodAngle)
 
 		##############################################################################
 
