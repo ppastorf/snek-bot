@@ -16,41 +16,69 @@ from math import *
 import sys
 from time import sleep
 
-#############################################################################
-#								# CONSTANTS #										
+###################################################################################
+#									# CONSTANTS #
+
+'''
+This constants are the only thing that need be changed to experiment with
+different evolutions scenarios, with exception to the number of genes, of course.
+'''
 
 # Size of each population
-POP_SIZE = 100
+POP_SIZE = 400
 
 # Number of individuals from each generation to be selected for breeding (progenitors)
-N_PROG = 10
+N_PROG = 20
 
-# Number of lucky chromosomes to be selected for breeding (to maintain genetic variability)
-LUCKY_ONES = 0
+# Both POP_SIZE and N_PROG should follow the rule x%10 = 0 !!
 
-# Number of sons by each pair of parents
-N_SONS = int(POP_SIZE/N_PROG)
+# Every pair of parents should result in 10*N_BATCH chromosomes, as every crossover
+# iteration generates 10 chromosomes (10 is arbitrary)
+N_BATCH = int( (POP_SIZE/N_PROG)/10 )
+
+# Number of lucky chromosomes to be randomly selected for breeding,
+# to maintain genetic variability
+LUCKY_ONES = 2
 
 # Number of generations
-N_GEN = 100
+N_GEN = 20
 
 # Mutation rate
-MUT_RATE = 0.10
+MUT_RATE = 0.1
 
 # Number of genes (this can't be tweaked without making other changes to the code)
 N_GENES = 5
 
-#############################################################################
+# Breeding method (either 'genetic', 'arithmetic', 'coinflip' or 'mixed')
+BREEDING = 'genetic'
+
+###################################################################################
+#								# GENE BOUNDS #
+
+'''
+This are the lower (first value) and upper (second value) boundaries for the random
+generation of genes, wich happens in the inicialization of the first generation
+and in the event of mutation. Careful when teaking this values. You must understand
+what you're doing or else the behavior of the algorithm is unexpected.
+'''
+
+GENE1 = [03.00, 99.00]
+GENE2 = [00.01, 02.00]
+GENE3 = [03.00, 99.00]
+GENE4 = [-1.00, 01.00]
+GENE5 = [00.01, 01.00]
+
+###################################################################################
 
 # Generates random population
 def randPopulation():
 	pop = []
 	for i in range(0, POP_SIZE):
-		randChromo =   [uniform(3.0, 99.0),
-						uniform(0.01, 2.0),
-						uniform(3.0, 99.0),
-						uniform(-1.0, 1.0),
-						uniform(0.01, 1.0)]
+		randChromo =   [uniform(GENE1[0], GENE1[1]),
+						uniform(GENE2[0], GENE2[1]),
+						uniform(GENE3[0], GENE3[1]),
+						uniform(GENE4[0], GENE4[1]),
+						uniform(GENE5[0], GENE5[1])]
 
 		pop.append(Individual(randChromo))
 
@@ -58,10 +86,8 @@ def randPopulation():
 
 '''
 There are various possible methods of genetic crossover of cromosomes.
-For the sake of ease of exeperimentation, I implemented some
+For the sake of ease of exeperimentation, I implemented some.
 '''
-
-# Genetic crossover. Returns 2 sons.
 def geneticCrossover(chromosomeA, chromosomeB, elite, son):
 	chromoSonA = []
 	chromoSonB = []
@@ -85,7 +111,6 @@ def geneticCrossover(chromosomeA, chromosomeB, elite, son):
 	else:
 		return chromoSonB	
 
-# Arithmetic crossover. Returns 3 sons (one favoring each parent and one 'neutral')
 def arithmeticCrossover(chromosomeA, chromosomeB, elite, son):
 	chromoSonA = []
 	chromoSonB = []
@@ -117,7 +142,6 @@ def arithmeticCrossover(chromosomeA, chromosomeB, elite, son):
 	else:
 		return chromoSonC
 
-# Coin-flip crossover. Returns only one son
 def coinflipCrossover(chromosomeA, chromosomeB, elite):
 	chromoSon = []
 
@@ -128,14 +152,13 @@ def coinflipCrossover(chromosomeA, chromosomeB, elite):
 		else:
 			chromoSon.append(chromosomeB[i])
 
-	# Applies mutation to the cromosomes generated (the chance of mutation is embedded in the function)
+	# Applies mutation to the cromosomes generated (the chance of mutation is embedded in the function).
 	# Does not apply mutation if one of the parent chromosomes is the best one (elitism)
 	if not elite:
 		mutation(chromoSon)
 
 	return chromoSon
 
-# Chromosome mutation
 def mutation(chromosome):
 
 	# Every gene of the chromosome has the chance to mutate
@@ -146,24 +169,65 @@ def mutation(chromosome):
 
 			# We need to keep track of the upper and lower bounds for each gene
 			if i == 0:
-				chromosome[i] = uniform(3.0, 99.0)
+				chromosome[i] = uniform(GENE1[0], GENE1[1])
 			elif i == 1:
-				chromosome[i] = uniform(0.01, 2.0)
+				chromosome[i] = uniform(GENE2[0], GENE2[1])
 			elif i == 2:
-				chromosome[i] = uniform(3.0, 99.0)
+				chromosome[i] = uniform(GENE3[0], GENE3[1])
 			elif i == 3:
-				chromosome[i] = uniform(-1.0, 1.0)
+				chromosome[i] = uniform(GENE4[0], GENE4[1])
 			elif i == 4:
-				chromosome[i] = uniform(0.01, 1.0)
+				chromosome[i] = uniform(GENE5[0], GENE5[1])
+
+def breeding(parentA, parentB, elite):
+	# Generates 10 chromosomes based on the chosen breeding method
+	
+	offspring = []
+
+	if BREEDING == 'genetic':
+		# 5x the two possible combinations from genetic crossover
+		for k in range(5):
+			offspring.append( Individual( geneticCrossover(parentA.chromosome, parentB.chromosome, elite, 'A')    ))
+			offspring.append( Individual( geneticCrossover(parentA.chromosome, parentB.chromosome, elite, 'B')    ))
+		
+	elif BREEDING == 'arithmetic':
+		# 3x the three possible combinations from arithmetic crossover
+		for k in range(3):
+			offspring.append( Individual( arithmeticCrossover(parentA.chromosome, parentB.chromosome, elite, 'A') ))
+			offspring.append( Individual( arithmeticCrossover(parentA.chromosome, parentB.chromosome, elite, 'B') ))
+			offspring.append( Individual( arithmeticCrossover(parentA.chromosome, parentB.chromosome, elite, 'C') ))
+		offspring.append( Individual( arithmeticCrossover(parentA.chromosome, parentB.chromosome, elite, 'C') ))
+
+	elif BREEDING == 'coinflip':
+		# Ten random combinations from coinflip crossover
+		for k in range(10):
+			offspring.append( Individual( coinflipCrossover(parentA.chromosome, parentB.chromosome, elite)    ))
+
+	elif BREEDING == 'mixed':
+		# Two possible combinations from genetic crossover
+		offspring.append( Individual( geneticCrossover(parentA.chromosome, parentB.chromosome, elite, 'A')    ))
+		offspring.append( Individual( geneticCrossover(parentA.chromosome, parentB.chromosome, elite, 'B')    ))
+
+		# Three possible combinations from arithmetic crossover
+		offspring.append( Individual( arithmeticCrossover(parentA.chromosome, parentB.chromosome, elite, 'A') ))
+		offspring.append( Individual( arithmeticCrossover(parentA.chromosome, parentB.chromosome, elite, 'B') ))
+		offspring.append( Individual( arithmeticCrossover(parentA.chromosome, parentB.chromosome, elite, 'C') ))
+
+		# Five random combinations from coinflip crossover
+		for k in range(5):
+			offspring.append( Individual( coinflipCrossover(parentA.chromosome, parentB.chromosome, elite)    ))
+
+	return offspring
 
 # Gives birth to a whole new generation
 def newGen(progenitors):
 	newPop = []
 
-	# Each parent combination should produce N_SONS chromosomes as each generation should have POP_SIZE individuals 
+	'''
+	Every breeding execution generates 10 chromosomes. Thus, N_BATCH comes to actionS
+	'''
 
-	# genetic = 2, arithmetic = 3, coin-flip = 1. N_SONS = 10
-
+	# This loop breeds all except one pair of parents (i with i+1)
 	for i in range(0, N_PROG-1):
 		
 		# Applying elitism (protection of best chromosome against mutation)
@@ -172,53 +236,16 @@ def newGen(progenitors):
 		else:
 			elite = False
 
-		for j in range(1):
+		for j in range(N_BATCH):
+			offspring = breeding(progenitors[i], progenitors[i+1], elite)
+			newPop.extend(offspring)
 
-			# Generating 10 chromosomes:
-
-			# Genetic crossover:
-			for k in range(5):
-				newPop.append( Individual( geneticCrossover(progenitors[i].chromosome, progenitors[i+1].chromosome, elite, 'A')    )) # 1
-				newPop.append( Individual( geneticCrossover(progenitors[i].chromosome, progenitors[i+1].chromosome, elite, 'B')    )) # 1
-
-			# Arithmetic crossover:
-			for k in range(3):
-				newPop.append( Individual( arithmeticCrossover(progenitors[i].chromosome, progenitors[i+1].chromosome, elite, 'A') )) # 1
-				newPop.append( Individual( arithmeticCrossover(progenitors[i].chromosome, progenitors[i+1].chromosome, elite, 'B') )) # 1
-				newPop.append( Individual( arithmeticCrossover(progenitors[i].chromosome, progenitors[i+1].chromosome, elite, 'C') )) # 1
-			newPop.append( Individual( arithmeticCrossover(progenitors[i].chromosome, progenitors[i+1].chromosome, elite, 'C') )) # 1
-			
-			# Coinflip crossover:		
-			# for k in range(10):
-			# 	newPop.append( Individual( coinflipCrossover(progenitors[i].chromosome, progenitors[i+1].chromosome, elite)    )) # 1
-
-	elite = True
-
-	for j in range(1):
-
-		# Generates 10 chromosomes:
-
-		# # Genetic crossover:
-		# for k in range(5):		for k in range(5):
-		# 	newPop.append( Individual( geneticCrossover(progenitors[0].chromosome, progenitors[N_PROG-1].chromosome, elite, 'A')    )) # 1
-		# 	newPop.append( Individual( geneticCrossover(progenitors[0].chromosome, progenitors[N_PROG-1].chromosome, elite, 'B')    )) # 1
-
-		# 	newPop.append( Individual( geneticCrossover(progenitors[0].chromosome, progenitors[N_PROG-1].chromosome, elite, 'A')    )) # 1
-		# 	newPop.append( Individual( geneticCrossover(progenitors[0].chromosome, progenitors[N_PROG-1].chromosome, elite, 'B')    )) # 1
-		
-		# Arithmetic crossover:
-		for k in range(3):
-			newPop.append( Individual( arithmeticCrossover(progenitors[0].chromosome, progenitors[N_PROG-1].chromosome, elite, 'A') )) # 1
-			newPop.append( Individual( arithmeticCrossover(progenitors[0].chromosome, progenitors[N_PROG-1].chromosome, elite, 'B') )) # 1
-			newPop.append( Individual( arithmeticCrossover(progenitors[0].chromosome, progenitors[N_PROG-1].chromosome, elite, 'C') )) # 1
-		newPop.append( Individual( arithmeticCrossover(progenitors[0].chromosome, progenitors[N_PROG-1].chromosome, elite, 'C') )) # 1
-
-		# Coinflip crossover:
-		# for k in range(10):
-			# newPop.append( Individual( coinflipCrossover(progenitors[0].chromosome, progenitors[N_PROG-1].chromosome, elite)    )) # 1
+	# Last pair of parents (0 and the last one)
+	for j in range(N_BATCH):
+		offspring = breeding(progenitors[0], progenitors[N_PROG-1], True)
+		newPop.extend(offspring)
 
 	return newPop
-
 
 if __name__ == '__main__':
 
@@ -252,15 +279,20 @@ if __name__ == '__main__':
 		# Output of generation progenitors
 		print("----------------------------------------")
 		print("Gen", n,"\tBest fit:")
+		avgFit = 0
 		for i in range(0, len(progenitors)):
 			print('\t', i+1, ':', progenitors[i].fitness)
+			avgFit += progenitors[i].fitness
+
+		avgFit = avgFit/POP_SIZE
+		print("\nAverage fitness:", avgFit)
 		print("----------------------------------------")
 
 		# Gives birth to a new generation, based on the genes generated from crossover and mutation
 		population = newGen(progenitors)
 
 		# This generations best chromosome gets the chance to show its abilities
-		visualization.play( progenitors[0].chromosome, n)
+		# visualization.play( progenitors[0].chromosome, n)
 
 	input('a')
 	# Visualize the best of the best

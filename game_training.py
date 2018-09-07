@@ -264,7 +264,7 @@ class Evalutator(object):
         self.bot.playtime += TIMEOUT/1000
 
         # Case the snake is in a infinite loop
-        if self.bot.playtime >= 10:
+        if self.bot.playtime >= 100:
             self.gameOver()
             return
             

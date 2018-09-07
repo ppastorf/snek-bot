@@ -40,7 +40,7 @@ class Individual(object):
 
 		# Probability of turning this game tick (main controller function)
 
-		turnProb = (  (( ((1-frontWall)**w1) * w2) * ( (abs(foodAngle)*f1) ))  - ( ((1-frontWall)*foodAngle) *fxw1 ) )
+		turnProb =  ((1-frontWall)**w1) *w2  #- ( ((1-frontWall)*foodAngle) *fxw1 )
 
 		# If the action is taken, probability of what is the side to turn
 		leftProb  = leftWall + (f2*foodAngle)
