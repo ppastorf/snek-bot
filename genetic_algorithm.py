@@ -25,15 +25,15 @@ different evolutions scenarios, with exception to the number of genes, of course
 '''
 
 # Size of each population
-POP_SIZE = 400
+POP_SIZE = 100
 
 # Number of individuals from each generation to be selected for breeding (progenitors)
-N_PROG = 20
+N_PROG = 10
 
-# Both POP_SIZE and N_PROG should follow the rule x%10 = 0 !!
+# These values should follow the rule POP_SIZE = N_PROG * 10*N_BATCH, for every integer N_BATCH
 
 # Every pair of parents should result in 10*N_BATCH chromosomes, as every crossover
-# iteration generates 10 chromosomes (10 is arbitrary)
+# iteration generates 10 chromosomes (thisis arbitrary)
 N_BATCH = int( (POP_SIZE/N_PROG)/10 )
 
 # Number of lucky chromosomes to be randomly selected for breeding,
@@ -262,7 +262,7 @@ if __name__ == '__main__':
 		for i in range(0, POP_SIZE):
 
 			training.Evaluate(population[i])
-			print("Gen", n,"\tIndiv.", i, "fitness:", population[i].fitness)
+			print("Gen", n+1,"\tIndiv.", i, "fitness:", population[i].fitness)
 
 			# Visualizing this individual
 			# visualization.play(population[i].chromosome, n)
