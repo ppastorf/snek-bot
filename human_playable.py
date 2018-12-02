@@ -1,12 +1,11 @@
 #!/usr/bin/python3
 
+import snake
+
 '''
 	human playable version for testing and stuff
 '''
 
-import snake
-
-# main game object
 game = snake.Game()
 
 # binds keyboard controls

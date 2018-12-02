@@ -10,7 +10,6 @@ from random import randrange
 from tweak.game_tweak import *
 from time import sleep
 
-
 class Element(object):
     def __init__(self, canvas, pos_x, pos_y, color):
         self.canvas = canvas
@@ -157,7 +156,6 @@ class Snake(object):
 class Game(object):
     
     def __init__(self):
-        
         # creating tkinter objects
         self.root = Tk()
         self.root.title("Snake")
@@ -168,7 +166,7 @@ class Game(object):
         self.snake = Snake(self.canvas)
         self.food  = Food(self.canvas)
         self.score = 0
-        self.gameState = 1
+        self.isAlive = True
 
     def showScore(self):
         self.canvas.create_text(X_SIZE/2, Y_SIZE+OFFSET, text='Score: {}'.format(self.score))
@@ -190,7 +188,7 @@ class Game(object):
             self.snake.turn('down')
 
     def gameOver(self):
-        self.gameState = 0
+        self.isAlive = False
 
     @property
     def snakeHasEatenFood(self):
@@ -241,7 +239,7 @@ class Game(object):
     def play(self):
 
         # main loop
-        while self.gameState:
+        while self.isAlive:
             self.tick()
             sleep(HUMAN_TIMEOUT)
 
