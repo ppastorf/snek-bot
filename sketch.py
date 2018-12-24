@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 from bot import Bot
-from bot_show import BotShow
+from game.bot_train import BotTrain
 from tweak.ga_tweak import *
 from tweak.game_tweak import *
 from random import randint, uniform
@@ -16,6 +16,11 @@ dna = [uniform(GENE1[0], GENE1[1]),
 bot = Bot(dna)
 
 # bot-playable game
-playable = BotShow(bot)
+train = BotTrain(bot)
 
-playable.play()
+train.play()
+
+# etc
+print('Score: ', bot.score)
+print('Playtime: ', bot.playtime)
+print('Turns', bot.turns)

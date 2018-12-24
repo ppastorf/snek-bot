@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 '''
-    contains all classes for the base snake game, played by a human
+    contains all classes for the base snake game
 '''
 
 import sys
@@ -165,7 +165,12 @@ class Game(object):
         # main game objects
         self.snake = Snake(self.canvas)
         self.food  = Food(self.canvas)
+
+        # main game variables
         self.score = 0
+        self.playtime = 0.0
+        self.turns = 0
+
         self.isAlive = True
 
     def showScore(self):
@@ -173,18 +178,22 @@ class Game(object):
 
     def keyboardLeft(self, event):
         if self.snake.inValidPosition:
+            self.turns += 1
             self.snake.turn('left')
     
     def keyboardRight(self, event):
         if self.snake.inValidPosition:
+            self.turns += 1
             self.snake.turn('right')
     
     def keyboardUp(self, event):
         if self.snake.inValidPosition:
+            self.turns += 1
             self.snake.turn('up')
     
     def keyboardDown(self, event):
         if self.snake.inValidPosition:
+            self.turns += 1
             self.snake.turn('down')
 
     def gameOver(self):
@@ -241,6 +250,7 @@ class Game(object):
         # main loop
         while self.isAlive:
             self.tick()
+            self.playtime += HUMAN_TIMEOUT
             sleep(HUMAN_TIMEOUT)
 
         # on game over

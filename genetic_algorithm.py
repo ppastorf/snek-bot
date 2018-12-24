@@ -6,9 +6,9 @@ This is the code related to the genetic algorithm itself, as the main controller
 This is the main file and is the one that should be executed.
 '''
 
-import game_training as training
-import game_visualization as visualization
-from bot import Individual
+from bot import Bot
+from game.bot_train import BotTrain
+from game.bot_game import BotGame
 
 from random import randint, uniform
 import numpy as np

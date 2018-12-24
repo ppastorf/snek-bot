@@ -6,7 +6,7 @@
 	this class intended to be used to show a bot's performance after being trained
 '''
 
-import snake
+import game.snake as sn
 import numpy as np
 from math import *
 from tweak.ga_tweak import *
@@ -17,8 +17,8 @@ from time import sleep
 # Numpy stuff for printing arrays
 np.set_printoptions(threshold=np.nan)
 
-# overwrites some stuff from the main game class, so it is controlled with a bot
-class BotShow (snake.Game):
+# overwrites some stuff from the main game class, so it is controlled by a bot
+class BotGame(sn.Game):
 	def __init__(self, bot):
 		super().__init__()
 
@@ -62,8 +62,7 @@ class BotShow (snake.Game):
 		if action == 'straight':
 			pass
 		else:
-			self.bot.addTurn()
-
+			self.turns += 1
 			if self.snake.direction == 'left':
 				if action == 'left':
 					self.keyboardDown(None)
@@ -88,9 +87,12 @@ class BotShow (snake.Game):
 				if action == 'right':
 					self.keyboardLeft(None)
 
+	def endGame(self, event):
+		self.gameOver()
+
 	def tick(self):
 
-        # clear screen
+       # clear screen
 		self.canvas.delete("all")
 
 		self.showBorder()
@@ -122,15 +124,17 @@ class BotShow (snake.Game):
 
 		self.snake.walk()
 
+
 	def play(self):
+
+		# binding to end demonstration
+		self.root.bind('<Return>', self.endGame)
 
 		# main loop
 		while self.isAlive:
 			self.tick()
-			self.bot.addPlaytime(BOT_SHOW_TIMEOUT)
 			sleep(BOT_SHOW_TIMEOUT)
 
 		# on game over
 		sleep(0.3)
 		self.end()
-		self.bot.setScore(self.score)

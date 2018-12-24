@@ -35,11 +35,11 @@ class Bot(object):
 	def setScore(self, value):
 		self.score = value
 
-	def addPlaytime(self, value):
-		self.playtime += value
+	def setPlaytime(self, value):
+		self.playtime = value
 
-	def addTurn(self):
-		self.turns += 1
+	def setTurns(self, value):
+		self.turns = value
 
 	def learnState(self, data):
 		self.data = data
