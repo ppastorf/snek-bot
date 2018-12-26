@@ -24,7 +24,7 @@ START_DIR = 'left'
 
 # Timeout between every game tick in seconds 
 HUMAN_TIMEOUT = 0.040
-BOT_SHOW_TIMEOUT = 0.040
+BOT_SHOW_TIMEOUT = 0.010
 
 # Elements color
 FOOD_COLOR = "#006600"

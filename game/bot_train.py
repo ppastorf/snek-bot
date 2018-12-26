@@ -21,8 +21,8 @@ from tweak.game_tweak import *
 from random import randint, uniform
 from time import sleep
 
-# Numpy stuff for printing arrays
-np.set_printoptions(threshold=np.nan)
+# Constant for detecting infinite looping snakes
+NOT_SCOREUP_THRESHOLD = 100000
 
 # overwrites some stuff from the main game class, so it is controlled by a bot
 class BotTrain(bg.BotGame):
@@ -43,6 +43,9 @@ class BotTrain(bg.BotGame):
 		self.score = 0
 		self.playtime = 0.0
 		self.turns = 0
+
+		# used to check for infinite looping snakes
+		self.lastScoreUpPlaytime = 0.0
               
 		self.isAlive = True
 
@@ -56,9 +59,17 @@ class BotTrain(bg.BotGame):
 			return
 
 		if self.snakeHasEatenFood:
-		    self.scoreUp()
+			self.scoreUp()
+			
+			'''
+			everytime the snake gets a score up, saves the current
+			playtime. this is used to check for infinite
+			looping snakes.
+			'''
+			self.lastScoreUpPlaytime = self.playtime
 
-		''''''
+
+		''' bot integration related '''
 		# bot learns current state of the game
 		self.bot.learnState(self.gameState)
 
@@ -75,8 +86,15 @@ class BotTrain(bg.BotGame):
 
 		# main loop
 		while self.isAlive:
+
+			# ticks the game
 			self.tick()
 			self.playtime += 1
+
+			# checks of the ocurrence of an infinite looping snake
+			if (self.playtime - self.lastScoreUpPlaytime) == NOT_SCOREUP_THRESHOLD:
+				self.gameOver()
+
 
 		# on game over, set bot's attributes (scores for calculating fitness)
 		self.bot.setScore(self.score)

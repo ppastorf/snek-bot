@@ -12,12 +12,12 @@ from tweak.game_tweak import *
 
 class Bot(object):
 
-	def __init__(self, genome):
+	def __init__(self, dna):
 		''' 
 		bot's DNA: contains all information that defines a bot individual
 		it is the values wich the bot will use to calculate it action
 		based on it's current information about the game state '''
-		self.genome = genome
+		self.dna = dna
 
 		# bot's current information about the game state
 		self.data = []
@@ -50,12 +50,12 @@ class Bot(object):
 	def takeAction(self):	
 
 		# Weighs of the controller function (the genes)
-		w1   = self.genome[0] #  3 		<= 	w1 	<= 99    # expoent of an exponential function
-		w2   = self.genome[1] #  0.01 	<= 	w2 	<= 1     # multiplicative element of an exponential function
+		w1   = self.dna[0] #  3 		<= 	w1 	<= 99    # expoent of an exponential function
+		w2   = self.dna[1] #  0.01 	<= 	w2 	<= 1     # multiplicative element of an exponential function
 
-		f1   = self.genome[2] #  1   	<= 	f1 	<= 2     # 'a' of an gaussean function
-		f2	 = self.genome[3] #  0.001 	<= 	f2 	<= 0.003 # 'c' of an gaussean function
-		f3   = self.genome[4] # -1 		<= 	f3 	<= 1 	 # decision taking constant for choosing wich direction to turn
+		f1   = self.dna[2] #  1   	<= 	f1 	<= 2     # 'a' of an gaussean function
+		f2	 = self.dna[3] #  0.001 	<= 	f2 	<= 0.003 # 'c' of an gaussean function
+		f3   = self.dna[4] # -1 		<= 	f3 	<= 1 	 # decision taking constant for choosing wich direction to turn
 
 		# Bot's knowledge of current state of the game
 		frontWall = self.data[0] # Normalized distance to wall to the front
@@ -76,7 +76,6 @@ class Bot(object):
 		# If the action is taken, probability of what is the side to turn
 		leftProb  = leftWall + (f3*foodAngle)
 		rightProb = rightWall + (f3*foodAngle)
-
 
 		# if wallTurnProb > foodTurnProb:
 		# 	turnProb = wallTurnProb

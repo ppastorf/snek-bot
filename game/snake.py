@@ -247,6 +247,12 @@ class Game(object):
 
     def play(self):
 
+        # binds keyboard controls
+        game.root.bind('<Left>', game.keyboardLeft)
+        game.root.bind('<Right>', game.keyboardRight)
+        game.root.bind('<Up>', game.keyboardUp)
+        game.root.bind('<Down>', game.keyboardDown)
+
         # main loop
         while self.isAlive:
             self.tick()

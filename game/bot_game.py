@@ -19,8 +19,9 @@ np.set_printoptions(threshold=np.nan)
 
 # overwrites some stuff from the main game class, so it is controlled by a bot
 class BotGame(sn.Game):
-	def __init__(self, bot):
+	def __init__(self, bot, gen):
 		super().__init__()
+		self.root.title("Snek Bot generation " + str(gen))
 
 		# reference to the bot thats playing the game
 		self.bot = bot
