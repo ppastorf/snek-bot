@@ -1,5 +1,4 @@
-##############################################################################
-#                        # CONSTANTS FOR THE GAME ITSELF #
+# CONSTANTS FOR THE GAME ITSELF
 
 # Total size of the game screen
 X_SIZE = 400
@@ -23,7 +22,7 @@ START_POS = [300,200]
 START_DIR = 'left'
 
 # Timeout between every game tick in seconds 
-HUMAN_TIMEOUT = 0.040
+HUMAN_TIMEOUT    = 0.040
 BOT_SHOW_TIMEOUT = 0.010
 
 # Elements color
@@ -31,4 +30,3 @@ FOOD_COLOR = "#006600"
 HEAD_COLOR = "#804d00"
 BODY_COLOR = "#e68a00"
 BORD_COLOR = "#000000"
-###############################################################################W

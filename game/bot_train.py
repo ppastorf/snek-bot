@@ -7,7 +7,7 @@
 	does not sleep between game ticks and sets game attributes (score, playtime and number of turns)
 	back to the bot object when it terminates execution.
 
-	basically, this class is used to evaluate any individual (bot object) from any generation.
+	this class is used to evaluate any individual (bot object) from any generation.
 
 	the term 'train' is used instead of 'evaluate'
 '''
@@ -22,13 +22,12 @@ from random import randint, uniform
 from time import sleep
 
 # Constant for detecting infinite looping snakes
-NOT_SCOREUP_THRESHOLD = 100000
+NOT_score_up_THRESHOLD = 100000
 
 # overwrites some stuff from the main game class, so it is controlled by a bot
 class BotTrain(bg.BotGame):
 
 	def __init__(self, bot):
-
 		''' creating 'fake' tkinter objects for ease of implementation.	this way its not needed
 		to rewrite everything and some processing is saved because training does not need tkinter
 		as it does not uses graphical interface '''
@@ -45,58 +44,41 @@ class BotTrain(bg.BotGame):
 		self.turns = 0
 
 		# used to check for infinite looping snakes
-		self.lastScoreUpPlaytime = 0.0
+		self.last_score_playtime = 0.0
               
-		self.isAlive = True
+		self.is_alive = True
 
 		# reference to the bot thats playing the game
 		self.bot = bot
 
 	def tick(self):
-
-		if not self.snake.inValidPosition:
-			self.gameOver()
+		if not self.snake.in_valid_position:
+			self.game_over()
 			return
 
-		if self.snakeHasEatenFood:
-			self.scoreUp()
-			
-			'''
-			everytime the snake gets a score up, saves the current
-			playtime. this is used to check for infinite
-			looping snakes.
-			'''
-			self.lastScoreUpPlaytime = self.playtime
-
+		if self.snake_has_eaten_food:
+			self.score_up()
+			self.last_score_playtime = self.playtime
 
 		''' bot integration related '''
-		# bot learns current state of the game
-		self.bot.learnState(self.gameState)
-
-		# bot decides what to do
-		action = self.bot.takeAction()
+		# bot learns current state of the game and makes a decision
+		self.bot.learn_state(self.game_state)
+		action = self.bot.take_action()
 
 		# interpreting the action
-		self.controlSnake(action)
-		''''''
-
+		self.control_snake(action)
 		self.snake.walk()
 
 	def play(self):
-
-		# main loop
-		while self.isAlive:
-
-			# ticks the game
+		while self.is_alive:
 			self.tick()
 			self.playtime += 1
 
 			# checks of the ocurrence of an infinite looping snake
-			if (self.playtime - self.lastScoreUpPlaytime) == NOT_SCOREUP_THRESHOLD:
-				self.gameOver()
-
+			if (self.playtime - self.last_score_playtime) == NOT_score_up_THRESHOLD:
+				self.game_over()
 
 		# on game over, set bot's attributes (scores for calculating fitness)
-		self.bot.setScore(self.score)
-		self.bot.setPlaytime(self.playtime)
-		self.bot.setTurns(self.turns)
+		self.bot.score    = self.score
+		self.bot.playtime = self.playtime
+		self.bot.turns    = self.turns

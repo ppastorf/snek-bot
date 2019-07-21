@@ -18,7 +18,7 @@ import sys
 from time import sleep
 
 # generates random DNA (genome, dna, etc)
-def genRandDna():
+def gen_random_dna():
 	return [uniform(GENE1[0], GENE1[1]),
 			uniform(GENE2[0], GENE2[1]),
 			uniform(GENE3[0], GENE3[1]),
@@ -26,88 +26,91 @@ def genRandDna():
 			uniform(GENE5[0], GENE5[1])]
 
 # generates random population
-def genRandPopulation():
+def gen_random_population():
 	pop = []
 	for i in range(0, POP_SIZE):
-		randDna = genRandDna();
+		randDna = gen_random_dna();
 		pop.append(Bot(randDna))
 
 	return pop
 
+
 '''
-There are various possible methods of genetic crossover of cromosomes.
-For the sake of ease of exeperimentation, there is a function for eatch method.
+	various possible methods of chromosome crossover
 '''
-def geneticCrossover(dnaA, dnaB, elite, son):
-	chromoSonA = []
-	chromoSonB = []
+def genetic_crossover(dnaA, dnaB, elite, son):
+	chromosome_A = []
+	chromosome_B = []
 
 	SPLIT = int(N_GENES/2)
 
-	chromoSonA[:SPLIT] = dnaA[:SPLIT]
-	chromoSonA[SPLIT:N_GENES] = dnaB[SPLIT:N_GENES]
+	chromosome_A[:SPLIT] = dnaA[:SPLIT]
+	chromosome_A[SPLIT:N_GENES] = dnaB[SPLIT:N_GENES]
 
-	chromoSonB[:SPLIT] = dnaB[:SPLIT]
-	chromoSonB[SPLIT:N_GENES] = dnaA[SPLIT:N_GENES]
+	chromosome_B[:SPLIT] = dnaB[:SPLIT]
+	chromosome_B[SPLIT:N_GENES] = dnaA[SPLIT:N_GENES]
 
 	# Applies mutation to the cromosomes generated (the chance of mutation is embedded in the function)
 	# Does not apply mutation if one of the parent dnas is the best one (elitism)
 	if not elite:
-		mutation(chromoSonA)
-		mutation(chromoSonB)
+		mutation(chromosome_A)
+		mutation(chromosome_B)
 	
 	if son == 'A':
-		return chromoSonA
+		return chromosome_A
 	else:
-		return chromoSonB	
+		return chromosome_B	
 
-def arithmeticCrossover(dnaA, dnaB, elite, son):
-	chromoSonA = []
-	chromoSonB = []
-	chromoSonC = []
+
+def arithmetic_crossover(dnaA, dnaB, elite, son):
+	chromosome_A = []
+	chromosome_B = []
+	chromosome_C = []
 
 	# Chromosome favoring parent A
 	for i in range(N_GENES):
-		chromoSonA.append( ((3*dnaA[i]) + (1*dnaB[i])) / 4 )
+		chromosome_A.append( ((3*dnaA[i]) + (1*dnaB[i])) / 4 )
 
 	# Chromosome favoring parent B
 	for i in range(N_GENES):
-		chromoSonB.append( ((1*dnaA[i]) + (3*dnaB[i])) / 4 )
+		chromosome_B.append( ((1*dnaA[i]) + (3*dnaB[i])) / 4 )
 
 	# Neutral dna
 	for i in range(N_GENES):
-		chromoSonC.append( (dnaA[i]+dnaB[i]) / 2 )
+		chromosome_C.append( (dnaA[i]+dnaB[i]) / 2 )
 
 	# Applies mutation to the cromosomes generated (the chance of mutation is embedded in the function)
 	# Does not apply mutation if one of the parent dnas is the best one (elitism)
 	if not elite:
-		mutation(chromoSonA)
-		mutation(chromoSonB)
-		mutation(chromoSonC)
+		mutation(chromosome_A)
+		mutation(chromosome_B)
+		mutation(chromosome_C)
 
 	if son == 'A':
-		return chromoSonA
+		return chromosome_A
 	elif son == 'B':
-		return chromoSonB	
+		return chromosome_B	
 	else:
-		return chromoSonC
+		return chromosome_C
 
-def coinflipCrossover(dnaA, dnaB, elite):
-	chromoSon = []
+
+def coinflip_crossover(dnaA, dnaB, elite):
+	chromo = []
 
 	# Coin flip crossover
 	for i in range(N_GENES):
 		if randint(0, 1) == 0:
-			chromoSon.append(dnaA[i])
+			chromo.append(dnaA[i])
 		else:
-			chromoSon.append(dnaB[i])
+			chromo.append(dnaB[i])
 
 	# Applies mutation to the cromosomes generated (the chance of mutation is embedded in the function).
 	# Does not apply mutation if one of the parent dnas is the best one (elitism)
 	if not elite:
-		mutation(chromoSon)
+		mutation(chromo)
 
-	return chromoSon
+	return chromo
+
 
 def mutation(dna):
 	# Every gene of the dna has the chance to mutate
@@ -115,7 +118,6 @@ def mutation(dna):
 
 		mut = uniform(0.0, 1.0)
 		if mut <= MUT_RATE:
-
 			# We need to keep track of the upper and lower bounds for each gene
 			if i == 0:
 				dna[i] = uniform(GENE1[0], GENE1[1])
@@ -128,6 +130,7 @@ def mutation(dna):
 			elif i == 4:
 				dna[i] = uniform(GENE5[0], GENE5[1])
 
+
 def breeding(parentA, parentB, elite):
 	# Generates 10 dnas based on the chosen breeding method
 	offspring = []
@@ -135,44 +138,44 @@ def breeding(parentA, parentB, elite):
 	if BREEDING == 'genetic':
 		# 5x the two possible combinations from genetic crossover
 		for k in range(5):
-			offspring.append( Bot( geneticCrossover(parentA.dna, parentB.dna, elite, 'A')    ))
-			offspring.append( Bot( geneticCrossover(parentA.dna, parentB.dna, elite, 'B')    ))
+			offspring.append( Bot( genetic_crossover(parentA.dna, parentB.dna, elite, 'A')    ))
+			offspring.append( Bot( genetic_crossover(parentA.dna, parentB.dna, elite, 'B')    ))
 		
 	elif BREEDING == 'arithmetic':
 		# 3x the three possible combinations from arithmetic crossover
 		for k in range(3):
-			offspring.append( Bot( arithmeticCrossover(parentA.dna, parentB.dna, elite, 'A') ))
-			offspring.append( Bot( arithmeticCrossover(parentA.dna, parentB.dna, elite, 'B') ))
-			offspring.append( Bot( arithmeticCrossover(parentA.dna, parentB.dna, elite, 'C') ))
-		offspring.append( Bot( arithmeticCrossover(parentA.dna, parentB.dna, elite, 'C') ))
+			offspring.append( Bot( arithmetic_crossover(parentA.dna, parentB.dna, elite, 'A') ))
+			offspring.append( Bot( arithmetic_crossover(parentA.dna, parentB.dna, elite, 'B') ))
+			offspring.append( Bot( arithmetic_crossover(parentA.dna, parentB.dna, elite, 'C') ))
+		offspring.append( Bot( arithmetic_crossover(parentA.dna, parentB.dna, elite, 'C') ))
 
 	elif BREEDING == 'coinflip':
 		# Ten random combinations from coinflip crossover
 		for k in range(10):
-			offspring.append( Bot( coinflipCrossover(parentA.dna, parentB.dna, elite)    ))
+			offspring.append( Bot( coinflip_crossover(parentA.dna, parentB.dna, elite)    ))
 
 	elif BREEDING == 'mixed':
 		# Two possible combinations from genetic crossover
-		offspring.append( Bot( geneticCrossover(parentA.dna, parentB.dna, elite, 'A')    ))
-		offspring.append( Bot( geneticCrossover(parentA.dna, parentB.dna, elite, 'B')    ))
+		offspring.append( Bot( genetic_crossover(parentA.dna, parentB.dna, elite, 'A')    ))
+		offspring.append( Bot( genetic_crossover(parentA.dna, parentB.dna, elite, 'B')    ))
 
 		# Three possible combinations from arithmetic crossover
-		offspring.append( Bot( arithmeticCrossover(parentA.dna, parentB.dna, elite, 'A') ))
-		offspring.append( Bot( arithmeticCrossover(parentA.dna, parentB.dna, elite, 'B') ))
-		offspring.append( Bot( arithmeticCrossover(parentA.dna, parentB.dna, elite, 'C') ))
+		offspring.append( Bot( arithmetic_crossover(parentA.dna, parentB.dna, elite, 'A') ))
+		offspring.append( Bot( arithmetic_crossover(parentA.dna, parentB.dna, elite, 'B') ))
+		offspring.append( Bot( arithmetic_crossover(parentA.dna, parentB.dna, elite, 'C') ))
 
 		# Five random combinations from coinflip crossover
 		for k in range(5):
-			offspring.append( Bot( coinflipCrossover(parentA.dna, parentB.dna, elite)    ))
+			offspring.append( Bot( coinflip_crossover(parentA.dna, parentB.dna, elite)    ))
 
 	return offspring
 
 # Gives birth to a whole new generation
-def newGen(progenitors):
+def new_generation(progenitors):
 	newPop = []
 
 	'''
-	Every breeding execution generates 10 dnas. Thus, N_BATCH comes to action
+		every breeding execution generates 10 dnas. Thus, N_BATCH comes to action
 	'''
 
 	# This loop breeds all except one pair of parents (i with i+1)
@@ -198,7 +201,7 @@ def newGen(progenitors):
 if __name__ == '__main__':
 
 	# Generating the first (random) population
-	population = genRandPopulation()
+	population = gen_random_population()
 
 	# Loops for each generation
 	for n in range(1, N_GEN+1):
@@ -235,7 +238,7 @@ if __name__ == '__main__':
 		print("----------------------------------------")
 
 		# Gives birth to a new generation, based on the genes generated from crossover and mutation
-		population = newGen(progenitors)
+		population = new_generation(progenitors)
 
 		# Best dna of this generations gets the chance to show its abilities
 		print("This generation best individual showoff:")

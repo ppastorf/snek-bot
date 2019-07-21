@@ -26,29 +26,19 @@ class Bot(object):
 		self.score = 0
 		self.turns = 0
 		self.playtime = 0.0
-		self.distanceToFood = 0
+		self.distance_to_food = 0
 
 	@property
 	def fitness(self):
 		return self.score
 
-	def setScore(self, value):
-		self.score = value
-
-	def setPlaytime(self, value):
-		self.playtime = value
-
-	def setTurns(self, value):
-		self.turns = value
-
-	def learnState(self, data):
+	def learn_state(self, data):
 		self.data = data
 
 	'''
 	take some action based on the bot's current knowledge of the game state.
 	returns either 'straight' (no action), 'left' or 'right' '''
-	def takeAction(self):	
-
+	def take_action(self):	
 		# Weighs of the controller function (the genes)
 		w1   = self.dna[0] #  3 		<= 	w1 	<= 99    # expoent of an exponential function
 		w2   = self.dna[1] #  0.01 	<= 	w2 	<= 1     # multiplicative element of an exponential function
