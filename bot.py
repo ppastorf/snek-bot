@@ -48,10 +48,10 @@ class Bot(object):
 		f3   = self.dna[4] # -1 		<= 	f3 	<= 1 	 # decision taking constant for choosing wich direction to turn
 
 		# Bot's knowledge of current state of the game
-		frontWall = self.data[0] # Normalized distance to wall to the front
-		leftWall  = self.data[1] # Normalized distance to wall to the left
-		rightWall = self.data[2] # Normalized distance to wall to the right
-		foodAngle = self.data[3] # Normalized angle to food
+		front_wall = self.data[0] # Normalized distance to wall to the front
+		left_watt  = self.data[1] # Normalized distance to wall to the left
+		right_wall = self.data[2] # Normalized distance to wall to the right
+		food_angle = self.data[3] # Normalized angle to food
 
 		e = exp(1) # euler number
 
@@ -60,28 +60,21 @@ class Bot(object):
 
 		# Probability of turning this game tick (main controller function)
 
-		wallTurnProb = ((1-frontWall)**w1) *w2
-		foodTurnProb = (f1*e)**( -( ((abs(foodAngle)-0.5)**2)/(2*(f2**2)) ) )
+		turn_prob_wall = ((1-front_wall)**w1) *w2
+		turn_prob_food = (f1*e)**( -( ((abs(food_angle)-0.5)**2)/(2*(f2**2)) ) )
 
 		# If the action is taken, probability of what is the side to turn
-		leftProb  = leftWall + (f3*foodAngle)
-		rightProb = rightWall + (f3*foodAngle)
+		left_turn_prob  = left_watt  + (f3*food_angle)
+		right_turn_prob = right_wall + (f3*food_angle)
 
-		# if wallTurnProb > foodTurnProb:
-		# 	turnProb = wallTurnProb
-		# else:
-		# 	turnProb = foodTurnProb
-
-		# turnProb = ( 7*wallTurnProb + 3*foodTurnProb)/10
-		turnProb = wallTurnProb
-		# turnProb = foodTurnProb
+		turn_prob = turn_prob_wall *0.7 + turn_prob_food*0.3
 		##############################################################################
 
 		# Taking the action
 		rand = uniform(0.0, 1.0)
-		if rand <= turnProb:
+		if rand <= turn_prob:
 
-			if leftProb > rightProb:
+			if left_turn_prob > right_turn_prob:
 				action = 'left'
 			else:
 				action = 'right'

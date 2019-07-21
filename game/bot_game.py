@@ -51,8 +51,11 @@ class BotGame(sn.Game):
 		    walldist_right  = dist_left
 
 		# angle to food (normalized)
-		foodAngle = degrees( atan2(self.snake.pos_y-self.food.pos_y, self.snake.pos_x-self.food.pos_x)) / 180
-		return [walldist_front, walldist_left, walldist_right, foodAngle]
+		food_angle_rad  = atan2(self.snake.pos_y-self.food.pos_y,
+								self.snake.pos_x-self.food.pos_x)
+		food_angle = degrees(food_angle_rad) /180
+
+		return [walldist_front, walldist_left, walldist_right, food_angle]
 
 	def control_snake(self, action):
 		if action == 'straight':

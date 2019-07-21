@@ -186,7 +186,9 @@ class Game(object):
         self.is_alive = True
 
     def show_score(self):
-        self.canvas.create_text(X_SIZE/2, Y_SIZE+OFFSET, text='Score: {}'.format(self.score))
+        self.canvas.create_text(X_SIZE/2,
+                                Y_SIZE+OFFSET,
+                                text='Score: {}'.format(self.score))
 
     def keyboard_left(self, event):
         if self.snake.in_valid_position:
@@ -219,14 +221,16 @@ class Game(object):
         self.snake.eat(self.food)
         self.food = Food(self.canvas)
         # grants the food will not be in the same pos as the snake
-        while ( any([parts.pos == self.food.pos for parts in self.snake.body]) or self.snake.pos == self.food.pos ):
+        while ( any([parts.pos == self.food.pos for parts in self.snake.body])
+                or self.snake.pos == self.food.pos ):
             self.food = Food(self.canvas)
+        
         self.score += 1
 
     def show_border(self):
-        self.canvas.create_line(0, OFFSET-4, X_SIZE+4, OFFSET-4, fill=BORD_COLOR, width=OFFSET)
-        self.canvas.create_line(OFFSET-4, OFFSET-4, OFFSET-4, Y_SIZE, fill=BORD_COLOR, width=OFFSET)
-        self.canvas.create_line(X_SIZE-4, OFFSET-4, X_SIZE-4, Y_SIZE, fill=BORD_COLOR, width=OFFSET)
+        self.canvas.create_line(0,        OFFSET-4, X_SIZE+4, OFFSET-4, fill=BORD_COLOR, width=OFFSET)
+        self.canvas.create_line(OFFSET-4, OFFSET-4, OFFSET-4, Y_SIZE,   fill=BORD_COLOR, width=OFFSET)
+        self.canvas.create_line(X_SIZE-4, OFFSET-4, X_SIZE-4, Y_SIZE,   fill=BORD_COLOR, width=OFFSET)
         self.canvas.create_line(OFFSET-4, Y_SIZE-4, X_SIZE-4, Y_SIZE-4, fill=BORD_COLOR, width=OFFSET)
 
     def tick(self):
