@@ -1,11 +1,6 @@
 import game.snake as sn
 import game.bot_game as bg
 
-# Constant for detecting infinite looping snakes
-NOT_score_up_THRESHOLD = 100000
-
-# overwrites some stuff from the main game class, so it is controlled by a bot
-
 
 class BotTrain(bg.BotGame):
     def __init__(self, bot):
@@ -47,14 +42,20 @@ class BotTrain(bg.BotGame):
         self.control_snake(action)
         self.snake.walk()
 
+    def infinte_looping(self):
+        threshold = 100000
+
+        return (self.playtime - self.last_score_playtime >=
+                threshold)
+
     def play(self):
         while self.is_alive:
             self.tick()
             self.playtime += 1
 
             # checks of the ocurrence of an infinite looping snake
-            if (self.playtime - self.last_score_playtime) == NOT_score_up_THRESHOLD:
-                self.game_over()
+            if self.infinte_looping():
+                    self.game_over()
 
         # on game over, set bot's attributes (scores for calculating fitness)
         self.bot.score = self.score

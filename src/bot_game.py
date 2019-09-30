@@ -1,10 +1,8 @@
-import game.snake as sn
+import src.game as sn
 from math import *
 from tweak.ga_tweak import *
 from tweak.game_tweak import *
 from time import sleep
-
-# overwrites some stuff from the main game class, so it is controlled by a bot
 
 
 class BotGame(sn.Game):
@@ -24,7 +22,7 @@ class BotGame(sn.Game):
         if self.snake.direction == 'left':
             walldist_front = dist_left
             walldist_left = dist_down
-		    walldist_right = dist_up
+            walldist_right = dist_up
 
         if self.snake.direction == 'right':
             walldist_front = dist_right
@@ -80,8 +78,7 @@ class BotGame(sn.Game):
     def _end_game(self, event):
         self.game_over()
 
-    def _tick(self):
-        # clear screen
+    def tick(self):
         self.canvas.delete("all")
 
         self.show_border()
@@ -115,7 +112,7 @@ class BotGame(sn.Game):
 
         # main loop
         while self.is_alive:
-            self._tick()
+            self.tick()
             sleep(BOT_SHOW_TIMEOUT)
 
         # on game over
