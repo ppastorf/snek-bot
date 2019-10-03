@@ -1,198 +1,32 @@
 from tkinter import *
-from random import randrange
 from time import sleep
+import snake as sn
 
 # Total size of the game screen
 X_SIZE = 400
 Y_SIZE = 400
 
-# Size of the playable portion of the screen (game screen - offset borders)
-OFFSET = 10
+X_OFFSET = 10
+Y_OFFSET = 10
 
-REAL_X_SIZE = X_SIZE - OFFSET
-REAL_Y_SIZE = Y_SIZE - OFFSET
+PLAYABLE_X = X_SIZE - X_OFFSET
+PLAYABLE_Y = Y_SIZE - Y_OFFSET
 
 SCORE_SIZE = 20
 PIECE_SIZE = 10
 
-# Starting values of the snake's head
 START_POS = [300, 200]
 START_POS_X = START_POS[0]
 START_POS_Y = START_POS[1]
 START_DIR = 'left'
 
-# Timeout between every game tick in seconds
 HUMAN_DELAY = 0.04
 BOT_DELAY = 0.01
 
-# Elements color
-FOOD_COLOR = "#006600"
-HEAD_COLOR = "#804d00"
-BODY_COLOR = "#e68a00"
 BORD_COLOR = "#000000"
-DEFAULT_COLOR = "#aaaaaa"
 
 
-class Element(object):
-    def __init__(self, canvas, pos_x, pos_y, color=DEFAULT_COLOR):
-        self.canvas = canvas
-        self.color = color
-        self.pos_x = pos_x
-        self.pos_y = pos_y
-
-    def show(self):
-        self.canvas.create_rectangle(
-            self.pos_x,
-            self.pos_y,
-            self.pos_x + PIECE_SIZE,
-            self.pos_y + PIECE_SIZE,
-            fill=self.color
-        )
-
-    @property
-    def pos(self):
-        return self.pos_x, self.pos_y
-
-
-class Food(Element):
-    def __init__(self, canvas):
-        super().__init__(
-            canvas,
-            randrange(OFFSET, X_SIZE - OFFSET, PIECE_SIZE),
-            randrange(OFFSET, Y_SIZE - OFFSET, PIECE_SIZE),
-            color=FOOD_COLOR
-        )
-
-
-class SnakeBody(Element):
-
-    def __init__(self, canvas, last_part):
-        super().__init__(
-            canvas,
-            last_part.last_pos_x,
-            last_part.last_pos_y,
-            color=BODY_COLOR
-        )
-
-        # links the body piece to its previous one
-        self.last_part = last_part
-        self.last_pos_x = self.pos_x
-        self.last_pos_y = self.pos_y
-
-    def _update_last_position(self):
-        self.last_pos_x = self.pos_x
-        self.last_pos_y = self.pos_y
-
-    def _update_position(self):
-        self.pos_x = self.last_part.last_pos_x
-        self.pos_y = self.last_part.last_pos_y
-
-    def walk(self):
-        self._update_last_position()
-        self._update_position()
-
-
-class SnakeHead(Element):
-
-    def __init__(self, canvas):
-        super().__init__(
-            canvas,
-            START_POS_X,
-            START_POS_Y,
-            color=HEAD_COLOR
-        )
-
-        self.last_pos_x = START_POS_X + PIECE_SIZE
-        self.last_pos_y = START_POS_Y
-
-    def walk(self, direction):
-        self.last_pos_x = self.pos_x
-        self.last_pos_y = self.pos_y
-
-        # walks
-        if direction == 'left':
-            self.pos_x -= PIECE_SIZE
-
-        if direction == 'right':
-            self.pos_x += PIECE_SIZE
-
-        if direction == 'up':
-            self.pos_y -= PIECE_SIZE
-
-        if direction == 'down':
-            self.pos_y += PIECE_SIZE
-
-
-class Snake(object):
-    def __init__(self, canvas):
-        self.direction = START_DIR
-        self.canvas = canvas
-
-        self.head = SnakeHead(canvas)
-        self.body = [SnakeBody(canvas, self.head)]
-
-    def show_body(self):
-        for i in range(0, self.body_size, 1):
-            self.body[i].show()
-
-    def show(self):
-        self.head.show()
-        self.show_body()
-
-    def walk(self):
-        self.head.walk(self.direction)
-
-        for i in range(0, self.body_size, 1):
-            self.body[i].walk()
-
-    def turn(self, new_dir):
-        if new_dir == 'left':
-            if self.direction != 'right':
-                self.direction = 'left'
-
-        if new_dir == 'right':
-            if self.direction != 'left':
-                self.direction = 'right'
-
-        if new_dir == 'up':
-            if self.direction != 'down':
-                self.direction = 'up'
-
-        if new_dir == 'down':
-            if self.direction != 'up':
-                self.direction = 'down'
-
-    @property
-    def pos_x(self):
-        return self.head.pos_x
-
-    @property
-    def pos_y(self):
-        return self.head.pos_y
-
-    @property
-    def pos(self):
-        return self.head.pos
-
-    @property
-    def body_size(self):
-        return len(self.body)
-
-    @property
-    def in_valid_position(self):
-        return not (
-            (self.pos_x >= X_SIZE - OFFSET or self.pos_x < OFFSET or
-             self.pos_y >= Y_SIZE - OFFSET or self.pos_y < OFFSET) or
-            (any([parts.pos == self.pos for parts in self.body]))
-        )
-
-    def eat(self):
-        self.body.append(
-            SnakeBody(self.canvas, self.body[self.body_size - 1])
-        )
-
-
-class HumanGame(object):
+class Game(object):
 
     def __init__(self):
         self.root = Tk()
@@ -205,13 +39,12 @@ class HumanGame(object):
         )
         self.canvas.pack(expand=YES, fill=BOTH)
 
-        self.snake = Snake(self.canvas)
-        self.food = Food(self.canvas)
+        self.snake = sn.Snake()
+        self.food = sn.Food(X_SIZE, Y_SIZE)
 
         self.score = 0
-        self.playtime = 0.0
         self.turns = 0
-
+        self.playtime = 0.0
         self.is_alive = True
 
     def show_score(self):
