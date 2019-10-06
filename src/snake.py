@@ -25,6 +25,9 @@ class Element(object):
         self.size = size
         self.game = game
 
+    def update(self):
+        pass
+
     def show(self):
         self.game.canvas.create_rectangle(
             self.pos_x,
@@ -52,7 +55,7 @@ class Food(Element):
         )
 
 
-class SnakeBody(Element):
+class SnakeTail(Element):
 
     def __init__(
             self,
@@ -134,18 +137,22 @@ class Snake(object):
         self.game = game
         self.direction = start_dir
         self.head = SnakeHead(self, start_x, start_y)
-        self.body = []
+        self.tail = []
         self.turns = 0
         self.time_alive = 0.0
 
         for i in range(lenght):
-            self.body.append(
-                SnakeBody(self, self.head)
+            self.tail.append(
+                SnakeTail(self, self.head)
             )
+
+    def update(self):
+        self.time_alive += self.game.tick_delay
+        self.walk()
 
     def show_body(self):
         for i in range(0, self.body_size):
-            self.body[i].show()
+            self.tail[i].show()
 
     def show(self):
         self.head.show()
@@ -155,7 +162,7 @@ class Snake(object):
         self.head.walk(self.direction)
 
         for i in range(0, self.body_size):
-            self.body[i].walk()
+            self.tail[i].walk()
 
     def turn(self, new_dir):
         if not self.in_valid_position:
@@ -180,8 +187,8 @@ class Snake(object):
                 self.direction = 'down'
 
     def eat(self):
-        self.body.append(
-            SnakeBody(self, self.body[self.body_size - 1])
+        self.tail.append(
+            SnakeTail(self, self.tail[self.body_size - 1])
         )
 
     @property
@@ -196,15 +203,14 @@ class Snake(object):
             (self.pos_y >= max_y or self.pos_y < min_y)
         )
 
-        eaten_itself = any([parts.pos == self.pos for parts in self.body])
+        eaten_itself = any([parts.pos == self.pos for parts in self.tail])
 
         dead = out_of_bounds or eaten_itself
-
         return not dead
 
     @property
     def body_size(self):
-        return len(self.body)
+        return len(self.tail)
 
     @property
     def pos_y(self):
@@ -217,3 +223,13 @@ class Snake(object):
     @property
     def pos(self):
         return self.head.pos
+
+    def bind_to_keys(self):
+        self.game.root.bind('<Left>', self.game.keyboard_event)
+        self.game.root.bind('<Right>', self.game.keyboard_event)
+        self.game.root.bind('<Up>', self.game.keyboard_event)
+        self.game.root.bind('<Down>', self.game.keyboard_event)
+
+    def bind_to_bot(self):
+        # TODO
+        pass

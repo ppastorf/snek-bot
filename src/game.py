@@ -46,6 +46,8 @@ class Game(object):
             root = None
             canvas = None
 
+        self.elements = []
+
         self.x_size = x_size
         self.y_size = y_size
 
@@ -58,7 +60,10 @@ class Game(object):
         self.tick_delay = delay
 
         self.snake = sn.Snake(self, START_POS_X, START_POS_Y)
+        self.add_element(self.snake)
+
         self.food = sn.Food(self)
+        self.add_element(self.food)
 
         self.score = 0
         self.playtime = 0.0
@@ -67,9 +72,19 @@ class Game(object):
     @staticmethod
     def human_playable():
         game = Game()
-        game.bind_to_keys()
+        game.snake.bind_to_keys()
 
         return game
+
+    @staticmethod
+    def bot_playable(bot):
+        game = Game()
+        game.snake.bind_to_bot(bot)
+
+        return game
+
+    def add_element(self, element):
+        self.elements.append(element)
 
     def show_score(self):
         self.canvas.create_text(
@@ -77,17 +92,9 @@ class Game(object):
             Y_SIZE + BORDER_SIZE,
             text='Score: {}'.format(self.score))
 
-    def keyboard_left(self, event):
-        self.snake.turn('left')
-
-    def keyboard_right(self, event):
-        self.snake.turn('right')
-
-    def keyboard_up(self, event):
-        self.snake.turn('up')
-
-    def keyboard_down(self, event):
-        self.snake.turn('down')
+    def keyboard_event(self, event):
+        direction = event.keysym.lower()
+        self.snake.turn(direction)
 
     def keyboard_return(self, event):
         self.game_over()
@@ -102,8 +109,9 @@ class Game(object):
     def _new_food(self):
         del self.food
         food = sn.Food(self)
+
         while (
-            any([parts.pos == food.pos for parts in self.snake.body]) or
+            any([parts.pos == food.pos for parts in self.snake.tail]) or
                 self.snake.pos == food.pos):
             food = sn.Food(self)
 
@@ -112,6 +120,7 @@ class Game(object):
     def snake_eats_food(self):
         self.snake.eat()
         self.food = self._new_food()
+        self.add_element(self.food)
         self.score += 1
 
     def show_border(self, color=BORDER_COLOR, size=BORDER_SIZE):
@@ -152,18 +161,25 @@ class Game(object):
         )
 
     def draw_screen(self):
+        self.show_border()
+        self.show_score()
+
+        for element in self.elements:
+            element.show()
+
         self.root.update_idletasks()
         self.root.update()
 
     def clear_screen(self):
         self.canvas.delete("all")
 
+    def update_elements(self):
+        for element in self.elements:
+            element.update()
+
     def tick(self):
         self.clear_screen()
-        self.show_border()
-        self.show_score()
-        self.food.show()
-        self.snake.show()
+        self.update_elements()
 
         if not self.snake.in_valid_position:
             self.game_over()
@@ -172,7 +188,6 @@ class Game(object):
         if self.snake_in_food_position:
             self.snake_eats_food()
 
-        self.snake.walk()
         self.draw_screen()
 
     def end(self):
@@ -181,16 +196,13 @@ class Game(object):
         self.canvas.destroy()
         self.root.destroy()
 
-    def bind_to_keys(self):
-        self.root.bind('<Left>', self.keyboard_left)
-        self.root.bind('<Right>', self.keyboard_right)
-        self.root.bind('<Up>', self.keyboard_up)
-        self.root.bind('<Down>', self.keyboard_down)
+    def game_state(self):
+        # TODO
+        pass
 
     def play(self):
         while self.is_alive:
             self.tick()
-            self.snake.time_alive += self.tick_delay
             sleep(self.tick_delay)
 
         self.end()
@@ -199,92 +211,3 @@ class Game(object):
 if __name__ == '__main__':
     game = Game.human_playable()
     game.play()
-
-
-    @property
-    def game_state(self):
-        # distance to wall to the front, left and right
-        dist_left = (self.snake.pos_x - BORDER_SIZE) / REAL_X_SIZE
-        dist_up = (self.snake.pos_y - BORDER_SIZE) / REAL_Y_SIZE
-        dist_right = 1 - dist_left
-        dist_down = 1 - dist_up
-
-        if self.snake.direction == 'left':
-            walldist_front = dist_left
-            walldist_left = dist_down
-            walldist_right = dist_up
-
-        if self.snake.direction == 'right':
-            walldist_front = dist_right
-            walldist_left = dist_up
-            walldist_right = dist_down
-
-        if self.snake.direction == 'up':
-            walldist_front = dist_up
-            walldist_left = dist_left
-            walldist_right = dist_right
-
-        if self.snake.direction == 'down':
-            walldist_front = dist_down
-            walldist_left = dist_right
-            walldist_right = dist_left
-
-        # angle to food (normalized)
-        food_angle_rad = atan2(self.snake.pos_y - self.food.pos_y,
-                               self.snake.pos_x - self.food.pos_x)
-        food_angle = degrees(food_angle_rad) / 180
-
-        return [walldist_front, walldist_left, walldist_right, food_angle]
-
-#     def control_snake(self, action):
-#         if action == 'straight':
-#             pass
-#         else:
-#             if self.snake.direction == 'left':
-#                 if action == 'left':
-#                     self.keyboard_down(None)
-#                 if action == 'right':
-#                     self.keyboard_up(None)
-
-#             elif self.snake.direction == 'right':
-#                 if action == 'left':
-#                     self.keyboard_up(None)
-#                 if action == 'right':
-#                     self.keyboard_down(None)
-
-#             elif self.snake.direction == 'up':
-#                 if action == 'left':
-#                     self.keyboard_left(None)
-#                 if action == 'right':
-#                     self.keyboard_right(None)
-
-#             elif self.snake.direction == 'down':
-#                 if action == 'left':
-#                     self.keyboard_right(None)
-#                 if action == 'right':
-#                     self.keyboard_left(None)
-
-#     def tick(self):
-#         self.canvas.delete("all")
-
-#         self.show_border()
-#         self.food.show()
-#         self.snake.show()
-#         self.show_score()
-
-#         if not self.snake.in_valid_position:
-#             self.game_over()
-#             return
-
-#         if self.snake_has_eaten_food:
-#             self.score_up()
-
-#         self.bot.learn_state(self.game_state)
-#         action = self.bot.take_action()
-
-#         self.control_snake(action)
-
-#         self.root.update_idletasks()
-#         self.root.update()
-
-#         self.snake.walk()
