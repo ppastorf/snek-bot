@@ -191,11 +191,16 @@ class Snake(object):
         min_y = self.game.playable_y[0]
         max_y = self.game.playable_y[1]
 
-        return not (
-            (self.pos_x >= max_x or self.pos_x < min_x or
-             self.pos_y >= max_y or self.pos_y < min_y) or
-            any([parts.pos == self.pos for parts in self.body])
+        out_of_bounds = (
+            (self.pos_x >= max_x or self.pos_x < min_x) or
+            (self.pos_y >= max_y or self.pos_y < min_y)
         )
+
+        eaten_itself = any([parts.pos == self.pos for parts in self.body])
+
+        dead = out_of_bounds or eaten_itself
+
+        return not dead
 
     @property
     def body_size(self):

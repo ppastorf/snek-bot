@@ -172,8 +172,8 @@ class Game(object):
         if self.snake_in_food_position:
             self.snake_eats_food()
 
-        self.draw_screen()
         self.snake.walk()
+        self.draw_screen()
 
     def end(self):
         sleep(0.3)
@@ -201,40 +201,40 @@ if __name__ == '__main__':
     game.play()
 
 
-#     @property
-#     def game_state(self):
-#         # distance to wall to the front, left and right
-#         dist_left = (self.snake.pos_x - BORDER_SIZE) / REAL_X_SIZE
-#         dist_up = (self.snake.pos_y - BORDER_SIZE) / REAL_Y_SIZE
-#         dist_right = 1 - dist_left
-#         dist_down = 1 - dist_up
+    @property
+    def game_state(self):
+        # distance to wall to the front, left and right
+        dist_left = (self.snake.pos_x - BORDER_SIZE) / REAL_X_SIZE
+        dist_up = (self.snake.pos_y - BORDER_SIZE) / REAL_Y_SIZE
+        dist_right = 1 - dist_left
+        dist_down = 1 - dist_up
 
-#         if self.snake.direction == 'left':
-#             walldist_front = dist_left
-#             walldist_left = dist_down
-#             walldist_right = dist_up
+        if self.snake.direction == 'left':
+            walldist_front = dist_left
+            walldist_left = dist_down
+            walldist_right = dist_up
 
-#         if self.snake.direction == 'right':
-#             walldist_front = dist_right
-#             walldist_left = dist_up
-#             walldist_right = dist_down
+        if self.snake.direction == 'right':
+            walldist_front = dist_right
+            walldist_left = dist_up
+            walldist_right = dist_down
 
-#         if self.snake.direction == 'up':
-#             walldist_front = dist_up
-#             walldist_left = dist_left
-#             walldist_right = dist_right
+        if self.snake.direction == 'up':
+            walldist_front = dist_up
+            walldist_left = dist_left
+            walldist_right = dist_right
 
-#         if self.snake.direction == 'down':
-#             walldist_front = dist_down
-#             walldist_left = dist_right
-#             walldist_right = dist_left
+        if self.snake.direction == 'down':
+            walldist_front = dist_down
+            walldist_left = dist_right
+            walldist_right = dist_left
 
-#         # angle to food (normalized)
-#         food_angle_rad = atan2(self.snake.pos_y - self.food.pos_y,
-#                                self.snake.pos_x - self.food.pos_x)
-#         food_angle = degrees(food_angle_rad) / 180
+        # angle to food (normalized)
+        food_angle_rad = atan2(self.snake.pos_y - self.food.pos_y,
+                               self.snake.pos_x - self.food.pos_x)
+        food_angle = degrees(food_angle_rad) / 180
 
-#         return [walldist_front, walldist_left, walldist_right, food_angle]
+        return [walldist_front, walldist_left, walldist_right, food_angle]
 
 #     def control_snake(self, action):
 #         if action == 'straight':
