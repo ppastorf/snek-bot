@@ -1,6 +1,7 @@
 from tkinter import *
 from time import sleep
 import snake as sn
+import pprint
 
 X_SIZE = 400
 Y_SIZE = 400
@@ -46,7 +47,7 @@ class Game(object):
             root = None
             canvas = None
 
-        self.elements = []
+        self.elements = {}
 
         self.x_size = x_size
         self.y_size = y_size
@@ -59,15 +60,12 @@ class Game(object):
 
         self.tick_delay = delay
 
-        self.snake = sn.Snake(self, START_POS_X, START_POS_Y)
-        self.add_element(self.snake)
+        self.add_snake(sn.Snake(self, START_POS_X, START_POS_Y))
 
-        self.food = sn.Food(self)
-        self.add_element(self.food)
+        self.add_food(sn.Food(self))
 
         self.score = 0
         self.playtime = 0.0
-        self.is_alive = True
 
     @staticmethod
     def human_playable():
@@ -83,8 +81,21 @@ class Game(object):
 
         return game
 
-    def add_element(self, element):
-        self.elements.append(element)
+    def add_snake(self, snake):
+        self.snake = snake
+        self.elements.update({
+            "snake": snake
+        })
+
+    def add_food(self, food):
+        self.food = food
+        self.elements.update({
+            "food": food
+        })
+
+    def remove_food(self):
+        self.elements.pop("food", None)
+        del self.food
 
     def show_score(self):
         self.canvas.create_text(
@@ -97,17 +108,16 @@ class Game(object):
         self.snake.turn(direction)
 
     def keyboard_return(self, event):
-        self.game_over()
+        self.kill_snake()
 
-    def game_over(self):
-        self.is_alive = False
+    def kill_snake(self):
+        self.snake.is_alive = False
 
     @property
     def snake_in_food_position(self):
         return self.snake.pos == self.food.pos
 
-    def _new_food(self):
-        del self.food
+    def new_food(self):
         food = sn.Food(self)
 
         while (
@@ -119,8 +129,8 @@ class Game(object):
 
     def snake_eats_food(self):
         self.snake.eat()
-        self.food = self._new_food()
-        self.add_element(self.food)
+        self.remove_food()
+        self.add_food(self.new_food())
         self.score += 1
 
     def show_border(self, color=BORDER_COLOR, size=BORDER_SIZE):
@@ -164,8 +174,8 @@ class Game(object):
         self.show_border()
         self.show_score()
 
-        for element in self.elements:
-            element.show()
+        for e in self.elements:
+            self.elements[e].show()
 
         self.root.update_idletasks()
         self.root.update()
@@ -174,15 +184,15 @@ class Game(object):
         self.canvas.delete("all")
 
     def update_elements(self):
-        for element in self.elements:
-            element.update()
+        for e in self.elements:
+            self.elements[e].update()
 
     def tick(self):
         self.clear_screen()
         self.update_elements()
 
         if not self.snake.in_valid_position:
-            self.game_over()
+            self.snake.die()
             return
 
         if self.snake_in_food_position:
@@ -196,16 +206,21 @@ class Game(object):
         self.canvas.destroy()
         self.root.destroy()
 
+    @property
     def game_state(self):
-        # TODO
-        pass
+        return {
+            "score": self.score,
+            "elements": [{e: self.elements[e].state} for e in self.elements]
+        }
 
     def play(self):
-        while self.is_alive:
+        while self.snake.is_alive:
             self.tick()
             sleep(self.tick_delay)
 
         self.end()
+        pp = pprint.PrettyPrinter(indent=2)
+        pp.pprint(self.game_state)
 
 
 if __name__ == '__main__':

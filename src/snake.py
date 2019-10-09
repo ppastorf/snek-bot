@@ -41,6 +41,12 @@ class Element(object):
     def pos(self):
         return self.pos_x, self.pos_y
 
+    @property
+    def state(self):
+        return {
+            "pos": self.pos,
+        }
+
 
 class Food(Element):
     def __init__(
@@ -140,6 +146,8 @@ class Snake(object):
         self.tail = []
         self.turns = 0
         self.time_alive = 0.0
+        self.is_alive = True
+        self.bind = None
 
         for i in range(lenght):
             self.tail.append(
@@ -191,6 +199,9 @@ class Snake(object):
             SnakeTail(self, self.tail[self.body_size - 1])
         )
 
+    def die(self):
+        self.is_alive = False
+
     @property
     def in_valid_position(self):
         min_x = self.game.playable_x[0]
@@ -224,12 +235,30 @@ class Snake(object):
     def pos(self):
         return self.head.pos
 
+    @property
+    def state(self):
+        return {
+            "bind": self.bind,
+            "pos": self.pos,
+            "body_size": self.body_size,
+            "direction": self.direction,
+            "turns": self.turns,
+            "time_alive": self.time_alive
+        }
+
     def bind_to_keys(self):
+        if self.bind is not None:
+            return
+
         self.game.root.bind('<Left>', self.game.keyboard_event)
         self.game.root.bind('<Right>', self.game.keyboard_event)
         self.game.root.bind('<Up>', self.game.keyboard_event)
         self.game.root.bind('<Down>', self.game.keyboard_event)
+        self.bind = "player"
 
-    def bind_to_bot(self):
+    def bind_to_bot(self, bot):
+        if self.bind is not None:
+            return
+
+        self.bind = bot.name
         # TODO
-        pass
