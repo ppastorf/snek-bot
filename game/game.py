@@ -1,7 +1,6 @@
 from tkinter import *
 from time import sleep
-import snake as sn
-import pprint
+from . import snake as sn
 
 X_SIZE = 400
 Y_SIZE = 400
@@ -202,7 +201,6 @@ class Game(object):
 
     def end(self):
         sleep(0.3)
-        print('Score: ', self.score)
         self.canvas.destroy()
         self.root.destroy()
 
@@ -219,10 +217,3 @@ class Game(object):
             sleep(self.tick_delay)
 
         self.end()
-        pp = pprint.PrettyPrinter(indent=2)
-        pp.pprint(self.game_state)
-
-
-if __name__ == '__main__':
-    game = Game.human_playable()
-    game.play()

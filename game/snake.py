@@ -8,7 +8,7 @@ FOOD_SIZE = DEFAULT_SIZE
 
 FOOD_COLOR = "#006600"
 HEAD_COLOR = "#804d00"
-BODY_COLOR = "#e68a00"
+TAIL_COLOR = "#e68a00"
 
 
 class Element(object):
@@ -16,8 +16,8 @@ class Element(object):
             self,
             game,
             pos_x, pos_y,
-            color=DEFAULT_COLOR,
-            size=DEFAULT_SIZE):
+            size=DEFAULT_SIZE,
+            color=DEFAULT_COLOR):
 
         self.pos_x = pos_x
         self.pos_y = pos_y
@@ -57,6 +57,7 @@ class Food(Element):
             game,
             randrange(game.playable_x[0], game.playable_x[1], size),
             randrange(game.playable_y[0], game.playable_y[1], size),
+            size=size,
             color=color
         )
 
@@ -68,12 +69,13 @@ class SnakeTail(Element):
             master,
             last_part,
             size=SNAKE_SIZE,
-            color=BODY_COLOR):
+            color=TAIL_COLOR):
 
         super().__init__(
             master.game,
             last_part.last_pos_x,
             last_part.last_pos_y,
+            size=size,
             color=color
         )
 
@@ -108,7 +110,8 @@ class SnakeHead(Element):
             master.game,
             start_x,
             start_y,
-            color=color
+            size=size,
+            color=color,
         )
 
         self.last_pos_x = start_x + self.size
@@ -149,6 +152,8 @@ class Snake(object):
         self.is_alive = True
         self.bind = None
 
+        self.size = size
+
         for i in range(lenght):
             self.tail.append(
                 SnakeTail(self, self.head)
@@ -158,18 +163,18 @@ class Snake(object):
         self.time_alive += self.game.tick_delay
         self.walk()
 
-    def show_body(self):
-        for i in range(0, self.body_size):
+    def show_tail(self):
+        for i in range(0, self.tail_length):
             self.tail[i].show()
 
     def show(self):
         self.head.show()
-        self.show_body()
+        self.show_tail()
 
     def walk(self):
         self.head.walk(self.direction)
 
-        for i in range(0, self.body_size):
+        for i in range(0, self.tail_length):
             self.tail[i].walk()
 
     def turn(self, new_dir):
@@ -196,7 +201,10 @@ class Snake(object):
 
     def eat(self):
         self.tail.append(
-            SnakeTail(self, self.tail[self.body_size - 1])
+            SnakeTail(
+                self,
+                self.tail[self.tail_length - 1]
+            )
         )
 
     def die(self):
@@ -220,8 +228,12 @@ class Snake(object):
         return not dead
 
     @property
-    def body_size(self):
+    def tail_length(self):
         return len(self.tail)
+
+    @property
+    def lenght(self):
+        return self.tail_length + 1
 
     @property
     def pos_y(self):
@@ -240,7 +252,7 @@ class Snake(object):
         return {
             "bind": self.bind,
             "pos": self.pos,
-            "body_size": self.body_size,
+            "lenght": self.lenght,
             "direction": self.direction,
             "turns": self.turns,
             "time_alive": self.time_alive
@@ -260,5 +272,5 @@ class Snake(object):
         if self.bind is not None:
             return
 
+        bot.snake = self
         self.bind = bot.name
-        # TODO
