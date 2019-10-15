@@ -1,6 +1,6 @@
 from tkinter import *
 from time import sleep
-from . import snake as sn
+from . import elements as elm
 
 X_SIZE = 400
 Y_SIZE = 400
@@ -41,7 +41,7 @@ class Game(object):
                 height=y_size + SCORE_SIZE
             )
             canvas.pack(expand=YES, fill=BOTH)
-            root.bind('<Return>', self.keyboard_return)
+            root.bind('<Return>', self.end_game)
         else:
             root = None
             canvas = None
@@ -59,9 +59,9 @@ class Game(object):
 
         self.tick_delay = delay
 
-        self.add_snake(sn.Snake(self, START_POS_X, START_POS_Y))
+        self.add_snake(elm.Snake(self, START_POS_X, START_POS_Y))
 
-        self.add_food(sn.Food(self))
+        self.add_food(elm.Food(self))
 
         self.score = 0
         self.playtime = 0.0
@@ -102,11 +102,7 @@ class Game(object):
             Y_SIZE + BORDER_SIZE,
             text='Score: {}'.format(self.score))
 
-    def keyboard_event(self, event):
-        direction = event.keysym.lower()
-        self.snake.turn(direction)
-
-    def keyboard_return(self, event):
+    def end_game(self, event):
         self.kill_snake()
 
     def kill_snake(self):
@@ -117,12 +113,12 @@ class Game(object):
         return self.snake.pos == self.food.pos
 
     def new_food(self):
-        food = sn.Food(self)
+        food = elm.Food(self)
 
         while (
             any([parts.pos == food.pos for parts in self.snake.tail]) or
                 self.snake.pos == food.pos):
-            food = sn.Food(self)
+            food = elm.Food(self)
 
         return food
 
@@ -198,6 +194,7 @@ class Game(object):
             self.snake_eats_food()
 
         self.draw_screen()
+        # self.snake.turn()
 
     def end(self):
         sleep(0.3)

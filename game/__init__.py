@@ -1,2 +1,2 @@
 from .game import Game
-from .snake import *
+from .elements import *

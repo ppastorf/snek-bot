@@ -1,5 +1,5 @@
 from game import Game
-import pprint
+from pprint import pprint
 
 
 def random_dna():
@@ -13,11 +13,18 @@ class Bot(object):
         self.name = name
         self.snake = None
 
+    @property
+    def info(self):
+        return {
+            "name": self.name,
+            "dna": self.dna
+        }
+
 
 if __name__ == '__main__':
     bot = Bot()
     game = Game.bot_playable(bot)
     game.play()
 
-    pp = pprint.PrettyPrinter(indent=2)
-    pp.pprint(game.game_state)
+    pprint(game.game_state, indent=2)
+    pprint(bot.info, indent=2)

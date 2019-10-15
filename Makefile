@@ -1,2 +1,2 @@
 run:
-	python3 src/game.py
+	python3 human.py

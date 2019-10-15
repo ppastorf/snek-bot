@@ -144,7 +144,10 @@ class Snake(object):
             lenght=1, size=SNAKE_SIZE):
 
         self.game = game
+
         self.direction = start_dir
+        self.next_dir = start_dir
+
         self.head = SnakeHead(self, start_x, start_y)
         self.tail = []
         self.turns = 0
@@ -162,6 +165,7 @@ class Snake(object):
     def update(self):
         self.time_alive += self.game.tick_delay
         self.walk()
+        self.turn()
 
     def show_tail(self):
         for i in range(0, self.tail_length):
@@ -177,27 +181,26 @@ class Snake(object):
         for i in range(0, self.tail_length):
             self.tail[i].walk()
 
-    def turn(self, new_dir):
+    def turn(self):
+        opposite = {
+            "left": "right",
+            "up": "down",
+            "right": "left",
+            "down": "up"
+        }
+
         if not self.in_valid_position:
             return
 
+        if self.next_dir == self.direction:
+            return
+
+        if opposite[self.next_dir] == self.direction:
+            self.next_dir = self.direction
+            return
+
         self.turns += 1
-
-        if new_dir == 'left':
-            if self.direction != 'right':
-                self.direction = 'left'
-
-        if new_dir == 'right':
-            if self.direction != 'left':
-                self.direction = 'right'
-
-        if new_dir == 'up':
-            if self.direction != 'down':
-                self.direction = 'up'
-
-        if new_dir == 'down':
-            if self.direction != 'up':
-                self.direction = 'down'
+        self.direction = self.next_dir
 
     def eat(self):
         self.tail.append(
@@ -258,14 +261,18 @@ class Snake(object):
             "time_alive": self.time_alive
         }
 
+    def keyboard_direction(self, event):
+        direction = event.keysym.lower()
+        self.next_dir = direction
+
     def bind_to_keys(self):
         if self.bind is not None:
             return
 
-        self.game.root.bind('<Left>', self.game.keyboard_event)
-        self.game.root.bind('<Right>', self.game.keyboard_event)
-        self.game.root.bind('<Up>', self.game.keyboard_event)
-        self.game.root.bind('<Down>', self.game.keyboard_event)
+        self.game.root.bind('<Left>', self.keyboard_direction)
+        self.game.root.bind('<Right>', self.keyboard_direction)
+        self.game.root.bind('<Up>', self.keyboard_direction)
+        self.game.root.bind('<Down>', self.keyboard_direction)
         self.bind = "player"
 
     def bind_to_bot(self, bot):
