@@ -16,6 +16,7 @@ class Element(object):
             self,
             game,
             pos_x, pos_y,
+            elem_type="element",
             size=DEFAULT_SIZE,
             color=DEFAULT_COLOR):
 
@@ -24,6 +25,7 @@ class Element(object):
         self.color = color
         self.size = size
         self.game = game
+        self.elem_type = elem_type
 
     def update(self):
         pass
@@ -44,6 +46,8 @@ class Element(object):
     @property
     def state(self):
         return {
+            "type": self.elem_type,
+            "id": self.elem_id,
             "pos": self.pos,
         }
 
@@ -57,9 +61,11 @@ class Food(Element):
             game,
             randrange(game.playable_x[0], game.playable_x[1], size),
             randrange(game.playable_y[0], game.playable_y[1], size),
+            elem_type="food",
             size=size,
             color=color
         )
+        self.elem_id = self.game.new_elem_id()
 
 
 class SnakeTail(Element):
@@ -68,6 +74,7 @@ class SnakeTail(Element):
             self,
             master,
             last_part,
+            elem_type="tail",
             size=SNAKE_SIZE,
             color=TAIL_COLOR):
 
@@ -103,6 +110,7 @@ class SnakeHead(Element):
             master,
             start_x,
             start_y,
+            elem_type="head",
             size=SNAKE_SIZE,
             color=HEAD_COLOR):
 
@@ -141,7 +149,9 @@ class Snake(object):
             start_x,
             start_y,
             start_dir='left',
-            lenght=1, size=SNAKE_SIZE):
+            lenght=1,
+            is_main=False,
+            size=SNAKE_SIZE):
 
         self.game = game
 
@@ -153,9 +163,13 @@ class Snake(object):
         self.turns = 0
         self.time_alive = 0.0
         self.is_alive = True
+        self.is_main = is_main
         self.bind = None
 
         self.size = size
+
+        self.elem_type = "snake"
+        self.elem_id = self.game.new_elem_id()
 
         for i in range(lenght):
             self.tail.append(
@@ -165,10 +179,18 @@ class Snake(object):
     def update(self):
         self.time_alive += self.game.tick_delay
         self.walk()
+
+        if not self.in_valid_position:
+            self.die()
+
+        for food in self.game.foods.values():
+            if food.pos == self.pos:
+                self.game.snake_eats_food(food)
+
         self.turn()
 
     def show_tail(self):
-        for i in range(0, self.tail_length):
+        for i in range(self.tail_length):
             self.tail[i].show()
 
     def show(self):
@@ -178,7 +200,7 @@ class Snake(object):
     def walk(self):
         self.head.walk(self.direction)
 
-        for i in range(0, self.tail_length):
+        for i in range(self.tail_length):
             self.tail[i].walk()
 
     def turn(self):
@@ -212,6 +234,12 @@ class Snake(object):
 
     def die(self):
         self.is_alive = False
+        if self.is_main:
+            raise Exception
+
+    def in_same_position(self, elem):
+        return self.pos == elem.pos
+        return False
 
     @property
     def in_valid_position(self):
@@ -253,6 +281,8 @@ class Snake(object):
     @property
     def state(self):
         return {
+            "type": self.elem_type,
+            "id": self.elem_id,
             "bind": self.bind,
             "pos": self.pos,
             "lenght": self.lenght,

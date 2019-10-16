@@ -29,7 +29,7 @@ class Game(object):
             x_size=X_SIZE,
             y_size=Y_SIZE,
             show=True,
-            delay=HUMAN_DELAY,
+            tick_delay=HUMAN_DELAY,
             win_title="Snake"):
 
         if show:
@@ -46,7 +46,11 @@ class Game(object):
             root = None
             canvas = None
 
+        self.elem_count = 0
         self.elements = {}
+        self.snakes = {}
+        self.foods = {}
+        self.main_snake = None
 
         self.x_size = x_size
         self.y_size = y_size
@@ -57,44 +61,76 @@ class Game(object):
         self.root = root
         self.canvas = canvas
 
-        self.tick_delay = delay
+        self.tick_delay = tick_delay
 
-        self.add_snake(elm.Snake(self, START_POS_X, START_POS_Y))
-
-        self.add_food(elm.Food(self))
+        self.add_snake(main=True)
+        self.add_food()
+        self.add_food()
 
         self.score = 0
         self.playtime = 0.0
+        self.should_run = True
 
     @staticmethod
     def human_playable():
         game = Game()
-        game.snake.bind_to_keys()
+        game.main_snake.bind_to_keys()
 
         return game
 
     @staticmethod
     def bot_playable(bot):
         game = Game()
-        game.snake.bind_to_bot(bot)
+        game.main_snake.bind_to_bot(bot)
 
         return game
 
-    def add_snake(self, snake):
-        self.snake = snake
+    def new_elem_id(self):
+        self.elem_count += 1
+        return self.elem_count
+
+    def add_snake(self, main=False):
+        snake = elm.Snake(self, START_POS_X, START_POS_Y, is_main=main)
+
+        if main and self.main_snake is None:
+            self.main_snake = snake
+
+        self.snakes.update({
+            snake.elem_id: snake
+        })
         self.elements.update({
-            "snake": snake
+            snake.elem_id: snake
         })
 
-    def add_food(self, food):
-        self.food = food
+    def remove_snake(self, snake):
+        self.snakes.pop(snake.elem_id, None)
+        self.elements.pop(snake.elem_id, None)
+        del snake
+
+    def add_food(self):
+        food = elm.Food(self)
+
+        self.foods.update({
+            food.elem_id: food
+        })
         self.elements.update({
-            "food": food
+            food.elem_id: food
         })
 
-    def remove_food(self):
-        self.elements.pop("food", None)
-        del self.food
+    def remove_food(self, food):
+        self.foods.pop(food.elem_id, None)
+        self.elements.pop(food.elem_id, None)
+        del food
+
+    def new_food(self):
+        food = elm.Food(self)
+
+        while (
+            any([parts.pos == food.pos for parts in self.main_snake.tail]) or
+                self.main_snake.pos == food.pos):
+            food = elm.Food(self)
+
+        return food
 
     def show_score(self):
         self.canvas.create_text(
@@ -103,30 +139,7 @@ class Game(object):
             text='Score: {}'.format(self.score))
 
     def end_game(self, event):
-        self.kill_snake()
-
-    def kill_snake(self):
-        self.snake.is_alive = False
-
-    @property
-    def snake_in_food_position(self):
-        return self.snake.pos == self.food.pos
-
-    def new_food(self):
-        food = elm.Food(self)
-
-        while (
-            any([parts.pos == food.pos for parts in self.snake.tail]) or
-                self.snake.pos == food.pos):
-            food = elm.Food(self)
-
-        return food
-
-    def snake_eats_food(self):
-        self.snake.eat()
-        self.remove_food()
-        self.add_food(self.new_food())
-        self.score += 1
+        self.should_run = False
 
     def show_border(self, color=BORDER_COLOR, size=BORDER_SIZE):
         self.canvas.create_line(
@@ -182,19 +195,22 @@ class Game(object):
         for e in self.elements:
             self.elements[e].update()
 
+    def snake_eats_food(self, food):
+        self.main_snake.eat()
+        self.remove_food(food)
+        self.add_food()
+        self.score += 1
+
     def tick(self):
-        self.clear_screen()
-        self.update_elements()
+        # try:
+            self.clear_screen()
+            self.update_elements()
 
-        if not self.snake.in_valid_position:
-            self.snake.die()
-            return
+            self.draw_screen()
 
-        if self.snake_in_food_position:
-            self.snake_eats_food()
-
-        self.draw_screen()
-        # self.snake.turn()
+        # except Exception:
+        #     self.should_run = False
+        #     return
 
     def end(self):
         sleep(0.3)
@@ -209,7 +225,7 @@ class Game(object):
         }
 
     def play(self):
-        while self.snake.is_alive:
+        while self.should_run:
             self.tick()
             sleep(self.tick_delay)
 
