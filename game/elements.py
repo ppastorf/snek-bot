@@ -150,7 +150,6 @@ class Snake(object):
             start_y,
             start_dir='left',
             lenght=1,
-            is_main=False,
             size=SNAKE_SIZE):
 
         self.game = game
@@ -163,7 +162,6 @@ class Snake(object):
         self.turns = 0
         self.time_alive = 0.0
         self.is_alive = True
-        self.is_main = is_main
         self.bind = None
 
         self.size = size
@@ -176,26 +174,14 @@ class Snake(object):
                 SnakeTail(self, self.head)
             )
 
-    def update(self):
-        self.time_alive += self.game.tick_delay
-        self.walk()
-
-        if not self.in_valid_position:
-            self.die()
-
-        for food in self.game.foods.values():
-            if food.pos == self.pos:
-                self.game.snake_eats_food(food)
-
-        self.turn()
-
     def show_tail(self):
         for i in range(self.tail_length):
             self.tail[i].show()
 
     def show(self):
-        self.head.show()
-        self.show_tail()
+        if self.is_alive:
+            self.head.show()
+            self.show_tail()
 
     def walk(self):
         self.head.walk(self.direction)
@@ -224,7 +210,11 @@ class Snake(object):
         self.turns += 1
         self.direction = self.next_dir
 
-    def eat(self):
+    def eat(self, food):
+        self.game.remove_food(food)
+        self.game.add_food()
+        self.game.score += 1
+
         self.tail.append(
             SnakeTail(
                 self,
@@ -234,12 +224,20 @@ class Snake(object):
 
     def die(self):
         self.is_alive = False
-        if self.is_main:
-            raise Exception
 
-    def in_same_position(self, elem):
-        return self.pos == elem.pos
-        return False
+    def update(self):
+        if self.is_alive:
+            self.time_alive += self.game.tick_delay
+            self.walk()
+
+            if not self.in_valid_position:
+                self.die()
+
+            for food in self.game.foods.values():
+                if food.pos == self.pos:
+                    self.eat(food)
+
+            self.turn()
 
     @property
     def in_valid_position(self):
@@ -288,7 +286,8 @@ class Snake(object):
             "lenght": self.lenght,
             "direction": self.direction,
             "turns": self.turns,
-            "time_alive": self.time_alive
+            "time_alive": self.time_alive,
+            "is_alive": self.is_alive
         }
 
     def keyboard_direction(self, event):
