@@ -1,14 +1,14 @@
-from random import randrange
-
-DEFAULT_SIZE = 10
+BLOCK_SIZE = 10
 DEFAULT_COLOR = "#aaaaaa"
 
-SNAKE_SIZE = DEFAULT_SIZE
-FOOD_SIZE = DEFAULT_SIZE
+SNAKE_SIZE = BLOCK_SIZE
+FOOD_SIZE = BLOCK_SIZE
+WALL_SIZE = BLOCK_SIZE
 
 FOOD_COLOR = "#006600"
 HEAD_COLOR = "#804d00"
 TAIL_COLOR = "#e68a00"
+WALL_COLOR = "0000000"
 
 
 class Element(object):
@@ -17,7 +17,7 @@ class Element(object):
             game,
             pos_x, pos_y,
             elem_type="element",
-            size=DEFAULT_SIZE,
+            size=BLOCK_SIZE,
             color=DEFAULT_COLOR):
 
         self.pos_x = pos_x
@@ -31,13 +31,10 @@ class Element(object):
         pass
 
     def show(self):
-        self.game.canvas.create_rectangle(
-            self.pos_x,
-            self.pos_y,
-            self.pos_x + self.size,
-            self.pos_y + self.size,
-            fill=self.color
-        )
+        self.game.show_element(self)
+
+    def on_snake_hit(self, snake):
+        pass
 
     @property
     def pos(self):
@@ -46,9 +43,10 @@ class Element(object):
     @property
     def state(self):
         return {
-            "type": self.elem_type,
-            "id": self.elem_id,
-            "pos": self.pos,
+            self.elem_type: {
+                "id": self.elem_id,
+                "pos": self.pos,
+            }
         }
 
 
@@ -56,16 +54,40 @@ class Food(Element):
     def __init__(
             self,
             game,
-            size=FOOD_SIZE, color=FOOD_COLOR):
+            pos_x, pos_y,
+            size=FOOD_SIZE,
+            color=FOOD_COLOR):
+
         super().__init__(
             game,
-            randrange(game.playable_x[0], game.playable_x[1], size),
-            randrange(game.playable_y[0], game.playable_y[1], size),
+            pos_x, pos_y,
             elem_type="food",
             size=size,
             color=color
         )
         self.elem_id = self.game.new_elem_id()
+
+    def on_snake_hit(self, snake):
+        snake.eat(self)
+
+
+class Wall(Element):
+    def __init__(
+            self,
+            game,
+            pos_x, pos_y,
+            size=WALL_SIZE,
+            color=WALL_COLOR):
+        super().__init__(
+            game,
+            pos_x, pos_y,
+            elem_type="wall",
+            size=size,
+            color=color
+        )
+
+    def on_snake_hit(self, snake):
+        snake.die()
 
 
 class SnakeTail(Element):
@@ -130,16 +152,16 @@ class SnakeHead(Element):
         self.last_pos_y = self.pos_y
 
         if direction == 'left':
-            self.pos_x -= self.size
+            self.pos_x -= 1
 
         if direction == 'right':
-            self.pos_x += self.size
+            self.pos_x += 1
 
         if direction == 'up':
-            self.pos_y -= self.size
+            self.pos_y -= 1
 
         if direction == 'down':
-            self.pos_y += self.size
+            self.pos_y += 1
 
 
 class Snake(object):
@@ -212,7 +234,7 @@ class Snake(object):
 
     def eat(self, food):
         self.game.remove_food(food)
-        self.game.add_food()
+        self.game.add_food('random_pos')
         self.game.score += 1
 
         self.tail.append(
@@ -222,6 +244,18 @@ class Snake(object):
             )
         )
 
+    def in_valid_position(self, map):
+
+        min_x, max_x = self.game.x_range
+        min_y, max_y = self.game.y_range
+
+        out_of_bounds = (
+            (self.pos_x > max_x or self.pos_x < min_x) or
+            (self.pos_y > max_y or self.pos_y < min_y)
+        )
+
+        return not out_of_bounds
+
     def die(self):
         self.is_alive = False
 
@@ -230,31 +264,16 @@ class Snake(object):
             self.time_alive += self.game.tick_delay
             self.walk()
 
-            if not self.in_valid_position:
-                self.die()
+        if not self.in_valid_position(map):
+            print('out')
+            self.die()
+            return
 
-            for food in self.game.foods.values():
-                if food.pos == self.pos:
-                    self.eat(food)
+        element = self.game.element_at(self.pos_x, self.pos_y)
+        if element is not None:
+            element.on_snake_hit(self)
 
-            self.turn()
-
-    @property
-    def in_valid_position(self):
-        min_x = self.game.playable_x[0]
-        max_x = self.game.playable_x[1]
-        min_y = self.game.playable_y[0]
-        max_y = self.game.playable_y[1]
-
-        out_of_bounds = (
-            (self.pos_x >= max_x or self.pos_x < min_x) or
-            (self.pos_y >= max_y or self.pos_y < min_y)
-        )
-
-        eaten_itself = any([parts.pos == self.pos for parts in self.tail])
-
-        dead = out_of_bounds or eaten_itself
-        return not dead
+        self.turn()
 
     @property
     def tail_length(self):
@@ -279,34 +298,18 @@ class Snake(object):
     @property
     def state(self):
         return {
-            "type": self.elem_type,
-            "id": self.elem_id,
-            "bind": self.bind,
-            "pos": self.pos,
-            "lenght": self.lenght,
-            "direction": self.direction,
-            "turns": self.turns,
-            "time_alive": self.time_alive,
-            "is_alive": self.is_alive
+            self.elem_type: {
+                "id": self.elem_id,
+                "bind": self.bind,
+                "pos": self.pos,
+                "lenght": self.lenght,
+                "direction": self.direction,
+                "turns": self.turns,
+                "time_alive": self.time_alive,
+                "is_alive": self.is_alive
+            }
         }
 
     def keyboard_direction(self, event):
         direction = event.keysym.lower()
         self.next_dir = direction
-
-    def bind_to_keys(self):
-        if self.bind is not None:
-            return
-
-        self.game.root.bind('<Left>', self.keyboard_direction)
-        self.game.root.bind('<Right>', self.keyboard_direction)
-        self.game.root.bind('<Up>', self.keyboard_direction)
-        self.game.root.bind('<Down>', self.keyboard_direction)
-        self.bind = "player"
-
-    def bind_to_bot(self, bot):
-        if self.bind is not None:
-            return
-
-        bot.snake = self
-        self.bind = bot.name
