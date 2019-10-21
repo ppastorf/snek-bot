@@ -6,8 +6,7 @@ FOOD_SIZE = BLOCK_SIZE
 WALL_SIZE = BLOCK_SIZE
 
 FOOD_COLOR = "#006600"
-HEAD_COLOR = "#804d00"
-TAIL_COLOR = "#e68a00"
+SNAKE_COLOR = "#804d00"
 WALL_COLOR = "0000000"
 
 
@@ -17,6 +16,7 @@ class Element(object):
             game,
             pos_x, pos_y,
             elem_type="element",
+            elem_id="none",
             size=BLOCK_SIZE,
             color=DEFAULT_COLOR):
 
@@ -26,6 +26,7 @@ class Element(object):
         self.size = size
         self.game = game
         self.elem_type = elem_type
+        self.elem_id = self.game.new_elem_id()
 
     def update(self):
         pass
@@ -43,10 +44,7 @@ class Element(object):
     @property
     def state(self):
         return {
-            self.elem_type: {
-                "id": self.elem_id,
-                "pos": self.pos,
-            }
+            self.elem_type: vars(self)
         }
 
 
@@ -65,7 +63,6 @@ class Food(Element):
             size=size,
             color=color
         )
-        self.elem_id = self.game.new_elem_id()
 
     def on_snake_hit(self, snake):
         snake.eat(self)
@@ -78,6 +75,7 @@ class Wall(Element):
             pos_x, pos_y,
             size=WALL_SIZE,
             color=WALL_COLOR):
+
         super().__init__(
             game,
             pos_x, pos_y,
@@ -98,14 +96,14 @@ class SnakeTail(Element):
             last_part,
             elem_type="tail",
             size=SNAKE_SIZE,
-            color=TAIL_COLOR):
+            color=SNAKE_COLOR):
 
         super().__init__(
             master.game,
             last_part.last_pos_x,
             last_part.last_pos_y,
             size=size,
-            color=color
+            color=color,
         )
 
         self.last_part = last_part
@@ -134,14 +132,14 @@ class SnakeHead(Element):
             start_y,
             elem_type="head",
             size=SNAKE_SIZE,
-            color=HEAD_COLOR):
+            color=SNAKE_COLOR):
 
         super().__init__(
             master.game,
             start_x,
             start_y,
             size=size,
-            color=color,
+            color=color
         )
 
         self.last_pos_x = start_x + self.size
@@ -172,14 +170,18 @@ class Snake(object):
             start_y,
             start_dir='left',
             lenght=1,
+            color=SNAKE_COLOR,
             size=SNAKE_SIZE):
 
         self.game = game
 
+        self.head_color = color
+        self.tail_color = color
+
         self.direction = start_dir
         self.next_dir = start_dir
 
-        self.head = SnakeHead(self, start_x, start_y)
+        self.head = SnakeHead(self, start_x, start_y, color=self.head_color)
         self.tail = []
         self.turns = 0
         self.time_alive = 0.0
@@ -193,7 +195,7 @@ class Snake(object):
 
         for i in range(lenght):
             self.tail.append(
-                SnakeTail(self, self.head)
+                SnakeTail(self, self.head, color=self.tail_color)
             )
 
     def show_tail(self):
@@ -211,7 +213,12 @@ class Snake(object):
         for i in range(self.tail_length):
             self.tail[i].walk()
 
+    def take_turn(self):
+        return self.next_dir
+
     def turn(self):
+        new_dir = self.take_turn()
+
         opposite = {
             "left": "right",
             "up": "down",
@@ -222,25 +229,25 @@ class Snake(object):
         if not self.in_valid_position:
             return
 
-        if self.next_dir == self.direction:
+        if new_dir == self.direction:
             return
 
-        if opposite[self.next_dir] == self.direction:
-            self.next_dir = self.direction
+        if opposite[new_dir] == self.direction:
+            new_dir = self.direction
             return
 
         self.turns += 1
-        self.direction = self.next_dir
+        self.direction = new_dir
 
     def eat(self, food):
         self.game.remove_food(food)
         self.game.add_food('random_pos')
-        self.game.score += 1
 
         self.tail.append(
             SnakeTail(
                 self,
-                self.tail[self.tail_length - 1]
+                self.tail[self.tail_length - 1],
+                color=self.tail_color
             )
         )
 
@@ -250,8 +257,8 @@ class Snake(object):
         min_y, max_y = self.game.y_range
 
         out_of_bounds = (
-            (self.pos_x > max_x or self.pos_x < min_x) or
-            (self.pos_y > max_y or self.pos_y < min_y)
+            (self.pos_x >= max_x or self.pos_x < min_x) or
+            (self.pos_y >= max_y or self.pos_y < min_y)
         )
 
         return not out_of_bounds
@@ -265,7 +272,6 @@ class Snake(object):
             self.walk()
 
         if not self.in_valid_position(map):
-            print('out')
             self.die()
             return
 
@@ -280,7 +286,7 @@ class Snake(object):
         return len(self.tail)
 
     @property
-    def lenght(self):
+    def length(self):
         return self.tail_length + 1
 
     @property
@@ -298,16 +304,7 @@ class Snake(object):
     @property
     def state(self):
         return {
-            self.elem_type: {
-                "id": self.elem_id,
-                "bind": self.bind,
-                "pos": self.pos,
-                "lenght": self.lenght,
-                "direction": self.direction,
-                "turns": self.turns,
-                "time_alive": self.time_alive,
-                "is_alive": self.is_alive
-            }
+            self.elem_type: vars(self)
         }
 
     def keyboard_direction(self, event):

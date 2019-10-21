@@ -5,10 +5,10 @@ from random import randrange
 from pprint import pprint
 
 MAP_SIZE = [40, 40]
-X_SIZE = MAP_SIZE[0]
-Y_SIZE = MAP_SIZE[1]
+SIZE_X = MAP_SIZE[0]
+SIZE_Y = MAP_SIZE[1]
 
-START_POS = [int(X_SIZE / 2), int(Y_SIZE / 2)]
+START_POS = [int(SIZE_X / 2), int(SIZE_Y / 2)]
 START_POS_X = START_POS[0]
 START_POS_Y = START_POS[1]
 
@@ -30,22 +30,42 @@ class GameOver(Exception):
     pass
 
 
-def parse_map(size_x, size_y):
-    map = []
-    for i in range(size_x):
-        row = []
-        for i in range(size_y):
-            row.append(0)
-        map.append(row)
-    return map
+class Map():
+    def __init__(self, size_x, size_y, board):
+        self.size_x = size_x
+        self.size_y = size_y
+        self.board = board
+
+    def on_position(self, x, y):
+        try:
+            element = self.board[x][y]
+        except IndexError:
+            print(x, y)
+            element = None
+
+        return element
+
+    def set_position(self, x, y, elem_id):
+        self.board[x][y] = elem_id
+        return elem_id
+
+    @staticmethod
+    def init_empty_board(size_x, size_y):
+        board = []
+        for i in range(size_x):
+            row = []
+            for i in range(size_y):
+                row.append(0)
+            board.append(row)
+
+        return board
 
 
 class Game(object):
-
     def __init__(
             self,
-            x_size=X_SIZE,
-            y_size=Y_SIZE,
+            size_x=SIZE_X,
+            size_y=SIZE_Y,
             show=True,
             tick_delay=HUMAN_DELAY,
             win_title="Snake"):
@@ -55,8 +75,8 @@ class Game(object):
             root.title(win_title)
             canvas = Canvas(
                 root,
-                width=x_size * BLOCK_SIZE,
-                height=y_size * BLOCK_SIZE + SCORE_OFFSET
+                width=size_x * BLOCK_SIZE,
+                height=size_y * BLOCK_SIZE + SCORE_OFFSET
             )
             canvas.pack(expand=YES, fill=BOTH)
             root.bind('<Return>', self.end_game)
@@ -68,27 +88,34 @@ class Game(object):
         self.elements = {}
         self.snakes = {}
 
-        self.x_size = x_size
-        self.y_size = y_size
+        self.size_x = size_x
+        self.size_y = size_y
 
         self.root = root
         self.canvas = canvas
 
         self.tick_delay = tick_delay
 
-        self.score = 0
         self.playtime = 0.0
         self.should_run = True
 
-        self.map = parse_map(*MAP_SIZE)
+        self.map = self.parse_map_file('file')
 
         self.add_food('random_pos')
+
+    def parse_map_file(self, file):
+        size_x, size_y = SIZE_X, SIZE_Y
+
+        M = Map(size_x, size_y, Map.init_empty_board(size_x, size_y))
+
+        return M
 
     @staticmethod
     def human_playable():
         game = Game()
-        snake = game.add_snake()
-        game.bind_snake_to_keys(snake)
+
+        snake1 = game.add_snake(color='blue')
+        game.bind_snake_to_keys(snake1)
 
         return game
 
@@ -100,6 +127,16 @@ class Game(object):
 
         return game
 
+    def element_at(self, x, y):
+        elem_id = self.map.on_position(x, y)
+
+        if elem_id == 0:
+            return None
+
+        return self.elements[elem_id]
+
+        return game
+
     def bind_snake_to_keys(self, snake):
         if snake.bind is not None:
             return
@@ -108,34 +145,30 @@ class Game(object):
         self.root.bind('<Right>', snake.keyboard_direction)
         self.root.bind('<Up>', snake.keyboard_direction)
         self.root.bind('<Down>', snake.keyboard_direction)
-        self.bind = "player"
+        snake.bind = "player"
 
-    def bind_snake_to_bot(self, bot):
-        if self.bind is not None:
+    def bind_snake_to_bot(self, snake, bot):
+        if snake.bind is not None:
             return
 
-        bot.snake = self
-        self.bind = bot.name
+        bot.snake = snake
+        snake.bind = bot
+        snake.take_turn = bot.take_turn
 
     def new_elem_id(self):
         self.elem_count += 1
         return self.elem_count
 
-    def element_at(self, x, y):
-        elem_id = self.map[x][y]
-
-        if elem_id == 0:
-            return None
-
-        return self.elements[elem_id]
-
     def add_snake(
             self,
             start_x=START_POS_X,
             start_y=START_POS_Y,
+            color=elm.SNAKE_COLOR,
             direction='left'):
 
-        snake = elm.Snake(self, start_x, start_y, start_dir=direction)
+        snake = elm.Snake(
+            self, start_x, start_y, start_dir=direction, color=color
+        )
         self.snakes.update({
             snake.elem_id: snake
         })
@@ -148,7 +181,6 @@ class Game(object):
     def remove_snake(self, snake):
         self.snakes.pop(snake.elem_id, None)
         self.elements.pop(snake.elem_id, None)
-        del snake
 
     def add_food(self, pos):
         if pos == 'random_pos':
@@ -162,26 +194,25 @@ class Game(object):
             food.elem_id: food
         })
 
-        self.map[pos_x][pos_y] = food.elem_id
+        self.map.set_position(pos_x, pos_y, food.elem_id)
 
         return food
 
     def remove_food(self, food):
         self.elements.pop(food.elem_id, None)
-        self.map[food.pos_x][food.pos_y] = 0
-        del food
+        self.map.set_position(food.pos_x, food.pos_y, 0)
 
     @property
     def x_range(self):
         min_x = 0
-        max_x = len(self.map[0]) - 1
+        max_x = self.map.size_x
 
         return (min_x, max_x)
 
     @property
     def y_range(self):
         min_y = 0
-        max_y = len(self.map[0]) - 1
+        max_y = self.map.size_y
 
         return (min_y, max_y)
 
@@ -196,15 +227,28 @@ class Game(object):
         for e in self.elements:
             self.elements[e].update()
 
+    def show_snake_score(self, i, snake):
+            screen_size_x, screen_size_y = self.screen_map_size()
+
+            text = "{}".format(snake.length)
+            text_x = (screen_size_x / (len(self.snakes) + 1)) * (i + 1)
+            text_y = screen_size_y + (SCORE_OFFSET / 2)
+
+            head_x = text_x - (len(text) + 20)
+            head_y = screen_size_y + (SCORE_OFFSET / 2) - (snake.head.size / 2)
+
+            self.show_element(snake.head, pos=(head_x, head_y))
+
+            self.canvas.create_text(
+                text_x, text_y,
+                text=text
+            )
+
     def show_score(self):
         screen_size_x, screen_size_y = self.screen_map_size()
-
         border_width = 4
         border_x = [0, screen_size_x]
         border_y = screen_size_y + border_width
-
-        text_x = screen_size_x / 2
-        text_y = screen_size_y + (SCORE_OFFSET / 2)
 
         self.canvas.create_line(
             border_x[0],
@@ -215,21 +259,24 @@ class Game(object):
             width=border_width
         )
 
-        self.canvas.create_text(
-            text_x, text_y,
-            text='Score: {}'.format(self.score))
+        for i, snake in enumerate(self.snakes.values()):
+            self.show_snake_score(i, snake)
 
     def screen_map_size(self):
-        x_size = len(self.map[0]) * BLOCK_SIZE
-        y_size = len(self.map) * BLOCK_SIZE
+        x_size = self.map.size_x * BLOCK_SIZE
+        y_size = self.map.size_y * BLOCK_SIZE
 
         return x_size, y_size
 
     def pos_on_screen(self, x, y):
         return x * BLOCK_SIZE, y * BLOCK_SIZE
 
-    def show_element(self, element):
-        pos_x, pos_y = self.pos_on_screen(element.pos_x, element.pos_y)
+    def show_element(self, element, pos=None):
+
+        if pos is None:
+            pos_x, pos_y = self.pos_on_screen(element.pos_x, element.pos_y)
+        else:
+            pos_x, pos_y = pos[0], pos[1]
 
         self.canvas.create_rectangle(
             pos_x, pos_y,
@@ -271,7 +318,6 @@ class Game(object):
     @property
     def game_state(self):
         return {
-            "score": self.score,
             "elements": [self.elements[e].state for e in self.elements]
         }
 
