@@ -163,6 +163,7 @@ class Game(object):
             self,
             start_x=START_POS_X,
             start_y=START_POS_Y,
+            bot=None,
             color=elm.SNAKE_COLOR,
             direction='left'):
 
@@ -175,6 +176,9 @@ class Game(object):
         self.elements.update({
             snake.elem_id: snake
         })
+
+        if bot is not None:
+            self.bind_snake_to_bot(snake, bot)
 
         return snake
 

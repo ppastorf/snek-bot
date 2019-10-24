@@ -5,9 +5,9 @@ from random import randrange
 
 class Bot(object):
 
-    def __init__(self, snake, name="robson"):
+    def __init__(self, snake=None, name="robson"):
         self.name = name
-        self.snake = None
+        self.snake = snake
 
         self.dir_map = {
             0: 'left',
@@ -33,15 +33,14 @@ class Bot(object):
 
 if __name__ == '__main__':
 
-    game = Game.human_playable()
+    bot1 = Bot()
+    game = Game.bot_playable(bot1)
 
-    snake2 = game.add_snake(color='red')
-    bot1 = Bot(snake2)
-    game.bind_snake_to_bot(snake2, bot1)
+    bot2 = Bot()
+    snake2 = game.add_snake(bot=bot2, color='red')
 
-    snake3 = game.add_snake(color='yellow')
-    bot2 = Bot(snake3)
-    game.bind_snake_to_bot(snake3, bot2)
+    bot3 = Bot()
+    snake3 = game.add_snake(bot=bot3, color='yellow')
 
     for i in range(300):
         food = game.add_food('random_pos')
