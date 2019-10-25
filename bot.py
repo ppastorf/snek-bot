@@ -1,6 +1,7 @@
 from game import Game
 from pprint import pprint
 from random import randrange
+import pandas as pd
 
 
 class Bot(object):
@@ -25,10 +26,13 @@ class Bot(object):
 
     @property
     def info(self):
-        return {
+        values = {
             "name": self.name,
             "bind": self.snake.elem_id
         }
+
+        state = pd.Series(data=values)
+        return state
 
 
 if __name__ == '__main__':
@@ -42,11 +46,9 @@ if __name__ == '__main__':
     bot3 = Bot()
     snake3 = game.add_snake(bot=bot3, color='yellow')
 
-    for i in range(300):
+    for i in range(30):
         food = game.add_food('random_pos')
 
     game.play()
 
-    pprint(game.game_state, indent=2)
-    pprint(bot1.info, indent=2)
-    pprint(bot2.info, indent=2)
+    print(game.game_state.to_string(index=False))

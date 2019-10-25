@@ -1,3 +1,6 @@
+import pandas as pd
+
+
 BLOCK_SIZE = 10
 DEFAULT_COLOR = "#aaaaaa"
 
@@ -26,7 +29,6 @@ class Element(object):
         self.size = size
         self.game = game
         self.elem_type = elem_type
-        self.elem_id = self.game.new_elem_id()
 
     def update(self):
         pass
@@ -43,9 +45,16 @@ class Element(object):
 
     @property
     def state(self):
-        return {
-            self.elem_type: vars(self)
+        values = {
+            'id': self.elem_id,
+            'type': self.elem_type,
+            'x': self.pos_x,
+            'y': self.pos_y
         }
+
+        state = pd.Series(data=values)
+
+        return state
 
 
 class Food(Element):
@@ -63,6 +72,7 @@ class Food(Element):
             size=size,
             color=color
         )
+        self.elem_id = self.game.new_elem_id()
 
     def on_snake_hit(self, snake):
         snake.eat(self)
@@ -175,6 +185,7 @@ class Snake(object):
 
         self.game = game
 
+        self.color = color
         self.head_color = color
         self.tail_color = color
 
@@ -303,9 +314,21 @@ class Snake(object):
 
     @property
     def state(self):
-        return {
-            self.elem_type: vars(self)
+        values = {
+            'id': self.elem_id,
+            'type': self.elem_type,
+            'x': self.pos_x,
+            'y': self.pos_y,
+            'dir': self.direction,
+            'length': self.length,
+            'alive': self.is_alive,
+            'color': self.color,
+            'bind': self.bind.name
         }
+
+        state = pd.Series(data=values)
+
+        return state
 
     def keyboard_direction(self, event):
         direction = event.keysym.lower()

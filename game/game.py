@@ -2,18 +2,16 @@ from tkinter import *
 from time import sleep
 from . import elements as elm
 from random import randrange
-from pprint import pprint
+import pandas as pd
 
-MAP_SIZE = [40, 40]
+
+MAP_SIZE = [50, 50]
 SIZE_X = MAP_SIZE[0]
 SIZE_Y = MAP_SIZE[1]
 
 START_POS = [int(SIZE_X / 2), int(SIZE_Y / 2)]
 START_POS_X = START_POS[0]
 START_POS_Y = START_POS[1]
-
-SCORE_SIZE = 20
-PIECE_SIZE = 10
 
 HUMAN_DELAY = 0.04
 BOT_DELAY = 0.01
@@ -101,8 +99,6 @@ class Game(object):
 
         self.map = self.parse_map_file('file')
 
-        self.add_food('random_pos')
-
     def parse_map_file(self, file):
         size_x, size_y = SIZE_X, SIZE_Y
 
@@ -122,8 +118,7 @@ class Game(object):
     @staticmethod
     def bot_playable(bot):
         game = Game()
-        snake = game.add_snake()
-        game.bind_snake_to_bot(snake, bot)
+        game.add_snake(bot=bot)
 
         return game
 
@@ -145,7 +140,9 @@ class Game(object):
         self.root.bind('<Right>', snake.keyboard_direction)
         self.root.bind('<Up>', snake.keyboard_direction)
         self.root.bind('<Down>', snake.keyboard_direction)
-        snake.bind = "player"
+        snake.bind = {
+            'name': 'player'
+        }
 
     def bind_snake_to_bot(self, snake, bot):
         if snake.bind is not None:
@@ -170,6 +167,7 @@ class Game(object):
         snake = elm.Snake(
             self, start_x, start_y, start_dir=direction, color=color
         )
+
         self.snakes.update({
             snake.elem_id: snake
         })
@@ -321,9 +319,10 @@ class Game(object):
 
     @property
     def game_state(self):
-        return {
-            "elements": [self.elements[e].state for e in self.elements]
-        }
+        states = [e.state for e in self.elements.values()]
+        state = pd.concat(states, axis=1, sort=False).transpose()
+
+        return state
 
     def play(self):
         while self.should_run:
