@@ -1,2 +1,2 @@
 run:
-	python3 human.py
+	python3 bot.py

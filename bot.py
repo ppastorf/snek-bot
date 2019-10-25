@@ -46,7 +46,7 @@ if __name__ == '__main__':
     bot3 = Bot()
     snake3 = game.add_snake(bot=bot3, color='yellow')
 
-    for i in range(30):
+    for i in range(300):
         food = game.add_food('random_pos')
 
     game.play()
