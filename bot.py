@@ -1,14 +1,13 @@
 from game import Game
-from pprint import pprint
 from random import randrange
 import pandas as pd
 
 
 class Bot(object):
 
-    def __init__(self, snake=None, name="robson"):
+    def __init__(self, name="bot"):
         self.name = name
-        self.snake = snake
+        self.snake = None
 
         self.dir_map = {
             0: 'left',
@@ -19,10 +18,9 @@ class Bot(object):
 
     def take_turn(self):
         dir_index = randrange(0, len(self.dir_map.keys()), 1)
-        direction = self.dir_map[dir_index]
-        self.snake.next_dir = direction
+        self.snake.next_dir = self.dir_map[dir_index]
 
-        return direction
+        return self.snake.next_dir
 
     @property
     def info(self):
@@ -35,19 +33,40 @@ class Bot(object):
         return state
 
 
+def new_color():
+    COLORS = [
+        'red',
+        'blue',
+        'yellow',
+        'pink',
+        'violet',
+        'orange',
+        'gray',
+        'maroon'
+    ]
+
+    color = new_color.count % len(COLORS)
+    new_color.count += 1
+    return COLORS[color]
+
+
+new_color.count = 0
+
+
 if __name__ == '__main__':
+    game = Game()
 
-    bot1 = Bot()
-    game = Game.bot_playable(bot1)
+    N_SNAKES = 20
 
-    bot2 = Bot()
-    snake2 = game.add_snake(bot=bot2, color='red')
+    N_FOOD = 300
+    FOOD_RESPAWN = True
 
-    bot3 = Bot()
-    snake3 = game.add_snake(bot=bot3, color='yellow')
+    for i in range(N_SNAKES):
+        bot = Bot(name=new_color())
+        game.add_snake(bot=bot, color=bot.name)
 
-    for i in range(300):
-        food = game.add_food('random_pos')
+    for i in range(N_FOOD):
+        food = game.add_food('random_pos', respawn=FOOD_RESPAWN)
 
     game.play()
 

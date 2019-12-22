@@ -115,13 +115,6 @@ class Game(object):
 
         return game
 
-    @staticmethod
-    def bot_playable(bot):
-        game = Game()
-        game.add_snake(bot=bot)
-
-        return game
-
     def element_at(self, x, y):
         elem_id = self.map.on_position(x, y)
 
@@ -184,13 +177,13 @@ class Game(object):
         self.snakes.pop(snake.elem_id, None)
         self.elements.pop(snake.elem_id, None)
 
-    def add_food(self, pos):
+    def add_food(self, pos, respawn=True):
         if pos == 'random_pos':
             pos_x, pos_y = self.rand_free_pos()
         else:
             pos_x, pos_y = pos
 
-        food = elm.Food(self, pos_x, pos_y)
+        food = elm.Food(self, pos_x, pos_y, respawn=respawn)
 
         self.elements.update({
             food.elem_id: food
@@ -226,8 +219,8 @@ class Game(object):
         return pos_x, pos_y
 
     def update_elements(self):
-        for e in self.elements:
-            self.elements[e].update()
+        for e in self.snakes:
+            self.snakes[e].update()
 
     def show_snake_score(self, i, snake):
             screen_size_x, screen_size_y = self.screen_map_size()

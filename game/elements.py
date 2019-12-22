@@ -63,7 +63,8 @@ class Food(Element):
             game,
             pos_x, pos_y,
             size=FOOD_SIZE,
-            color=FOOD_COLOR):
+            color=FOOD_COLOR,
+            respawn=True):
 
         super().__init__(
             game,
@@ -73,9 +74,12 @@ class Food(Element):
             color=color
         )
         self.elem_id = self.game.new_elem_id()
+        self.respawn = respawn
 
     def on_snake_hit(self, snake):
         snake.eat(self)
+        if self.respawn:
+            self.game.add_food('random_pos')
 
 
 class Wall(Element):
@@ -252,8 +256,6 @@ class Snake(object):
 
     def eat(self, food):
         self.game.remove_food(food)
-        self.game.add_food('random_pos')
-
         self.tail.append(
             SnakeTail(
                 self,
@@ -322,7 +324,6 @@ class Snake(object):
             'dir': self.direction,
             'length': self.length,
             'alive': self.is_alive,
-            'color': self.color,
             'bind': self.bind.name
         }
 
