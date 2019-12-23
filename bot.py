@@ -1,6 +1,7 @@
 from game import Game
 from random import randrange
 import pandas as pd
+import argparse
 
 
 class Bot(object):
@@ -53,20 +54,41 @@ def new_color():
 new_color.count = 0
 
 
+def get_args():
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument(
+        '--snakes',
+        help='Number of bot-controlled snakes',
+        default=10)
+
+    argparser.add_argument(
+        '--food',
+        help='Number of initial food',
+        default=300)
+
+    argparser.add_argument(
+        '--no-food-replace',
+        action='store_true',
+        help='Do not replace food when eaten')
+    args = argparser.parse_args()
+
+    return {
+        'n_snakes': int(args.snakes),
+        'n_food': int(args.food),
+        'replace_food': not bool(args.no_food_replace)
+    }
+
+
 if __name__ == '__main__':
+    args = get_args()
     game = Game()
 
-    N_SNAKES = 20
-
-    N_FOOD = 300
-    FOOD_RESPAWN = True
-
-    for i in range(N_SNAKES):
+    for i in range(args['n_snakes']):
         bot = Bot(name=new_color())
         game.add_snake(bot=bot, color=bot.name)
 
-    for i in range(N_FOOD):
-        food = game.add_food('random_pos', respawn=FOOD_RESPAWN)
+    for i in range(args['n_food']):
+        food = game.add_food('random_pos', replace=args['replace_food'])
 
     game.play()
 

@@ -64,7 +64,7 @@ class Food(Element):
             pos_x, pos_y,
             size=FOOD_SIZE,
             color=FOOD_COLOR,
-            respawn=True):
+            replace=True):
 
         super().__init__(
             game,
@@ -74,11 +74,11 @@ class Food(Element):
             color=color
         )
         self.elem_id = self.game.new_elem_id()
-        self.respawn = respawn
+        self.replace = replace
 
     def on_snake_hit(self, snake):
         snake.eat(self)
-        if self.respawn:
+        if self.replace:
             self.game.add_food('random_pos')
 
 

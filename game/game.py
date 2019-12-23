@@ -177,13 +177,13 @@ class Game(object):
         self.snakes.pop(snake.elem_id, None)
         self.elements.pop(snake.elem_id, None)
 
-    def add_food(self, pos, respawn=True):
+    def add_food(self, pos, replace=True):
         if pos == 'random_pos':
             pos_x, pos_y = self.rand_free_pos()
         else:
             pos_x, pos_y = pos
 
-        food = elm.Food(self, pos_x, pos_y, respawn=respawn)
+        food = elm.Food(self, pos_x, pos_y, replace=replace)
 
         self.elements.update({
             food.elem_id: food
@@ -312,7 +312,7 @@ class Game(object):
 
     @property
     def game_state(self):
-        states = [e.state for e in self.elements.values()]
+        states = [e.state for e in self.snakes.values()]
         state = pd.concat(states, axis=1, sort=False).transpose()
 
         return state
