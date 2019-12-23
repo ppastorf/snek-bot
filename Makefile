@@ -1,2 +1,11 @@
+install:
+	( \
+	  virtualenv -p python3 env; \
+	  source env/bin/activate; \
+	  pip3 install -r requirements.txt; \
+	)
 run:
-	python3 bot.py
+	( \
+	  source env/bin/activate; \
+	  python3 bot.py; \
+	)
