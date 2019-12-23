@@ -67,28 +67,34 @@ def get_args():
         default=300)
 
     argparser.add_argument(
+        '--no-self-collision',
+        action='store_true',
+        help='Snakes do not die on self hit')
+
+    argparser.add_argument(
+        '--no-collision',
+        action='store_true',
+        help='Snakes do not die when hitting each other')
+
+    argparser.add_argument(
         '--no-food-replace',
         action='store_true',
         help='Do not replace food when eaten')
     args = argparser.parse_args()
 
-    return {
-        'n_snakes': int(args.snakes),
-        'n_food': int(args.food),
-        'replace_food': not bool(args.no_food_replace)
-    }
+    return vars(args)
 
 
 if __name__ == '__main__':
     args = get_args()
     game = Game()
 
-    for i in range(args['n_snakes']):
+    for i in range(int(args['snakes'])):
         bot = Bot(name=new_color())
         game.add_snake(bot=bot, color=bot.name)
 
-    for i in range(args['n_food']):
-        food = game.add_food('random_pos', replace=args['replace_food'])
+    for i in range(int(args['food'])):
+        food = game.add_food('random_pos', replace=not args['no_food_replace'])
 
     game.play()
 

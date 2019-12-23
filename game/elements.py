@@ -29,15 +29,21 @@ class Element(object):
         self.size = size
         self.game = game
         self.elem_type = elem_type
+        self.elem_id = self.game.new_elem_id()
 
     def update(self):
-        pass
+        self.game.elements.update({
+            self.elem_id: self
+        })
 
     def show(self):
         self.game.show_element(self)
 
     def on_snake_hit(self, snake):
         pass
+
+    def set_map_pos(self):
+        self.game.map.set_position(self.pos_x, self.pos_y, self.elem_id)
 
     @property
     def pos(self):
@@ -73,7 +79,6 @@ class Food(Element):
             size=size,
             color=color
         )
-        self.elem_id = self.game.new_elem_id()
         self.replace = replace
 
     def on_snake_hit(self, snake):
@@ -224,9 +229,11 @@ class Snake(object):
 
     def walk(self):
         self.head.walk(self.direction)
+        self.head.set_map_pos()
 
         for i in range(self.tail_length):
             self.tail[i].walk()
+            self.tail[i].set_map_pos()
 
     def take_turn(self):
         return self.next_dir
@@ -280,6 +287,10 @@ class Snake(object):
         self.is_alive = False
 
     def update(self):
+        self.head.update()
+        for part in self.tail:
+            part.update()
+
         if self.is_alive:
             self.time_alive += self.game.tick_delay
             self.walk()
@@ -288,11 +299,16 @@ class Snake(object):
             self.die()
             return
 
-        element = self.game.element_at(self.pos_x, self.pos_y)
+        element = self.game.element_at(*self.next_pos)
         if element is not None:
+            print(element.elem_id)
             element.on_snake_hit(self)
 
         self.turn()
+
+    def on_snake_hit(self, snake):
+        if snake.elem_id != self.elem_id:
+            snake.die()
 
     @property
     def tail_length(self):
@@ -313,6 +329,19 @@ class Snake(object):
     @property
     def pos(self):
         return self.head.pos
+
+    @property
+    def next_pos(self):
+        if self.direction == 'left':
+            next_pos = (self.pos_x-1, self.pos_y)
+        if self.direction == 'right':
+            next_pos = (self.pos_x+1, self.pos_y)
+        if self.direction == 'up':
+            next_pos = (self.pos_x, self.pos_y-1)
+        if self.direction == 'down':
+            next_pos = (self.pos_x, self.pos_y+1)
+
+        return next_pos
 
     @property
     def state(self):

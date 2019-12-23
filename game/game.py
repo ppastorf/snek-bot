@@ -39,13 +39,22 @@ class Map():
             element = self.board[x][y]
         except IndexError:
             print(x, y)
-            element = None
+            element = 0
 
         return element
 
     def set_position(self, x, y, elem_id):
         self.board[x][y] = elem_id
         return elem_id
+
+    def print(self):
+        board_df = pd.DataFrame(data=self.map.board)
+        with pd.option_context(
+                'display.max_rows',
+                None,
+                'display.max_columns',
+                None):
+            print(board_df)
 
     @staticmethod
     def init_empty_board(size_x, size_y):
@@ -110,8 +119,8 @@ class Game(object):
     def human_playable():
         game = Game()
 
-        snake1 = game.add_snake(color='blue')
-        game.bind_snake_to_keys(snake1)
+        snake = game.add_snake(color='blue')
+        game.bind_snake_to_keys(snake)
 
         return game
 
@@ -123,8 +132,6 @@ class Game(object):
 
         return self.elements[elem_id]
 
-        return game
-
     def bind_snake_to_keys(self, snake):
         if snake.bind is not None:
             return
@@ -133,6 +140,7 @@ class Game(object):
         self.root.bind('<Right>', snake.keyboard_direction)
         self.root.bind('<Up>', snake.keyboard_direction)
         self.root.bind('<Down>', snake.keyboard_direction)
+
         snake.bind = {
             'name': 'player'
         }
@@ -212,7 +220,6 @@ class Game(object):
         return (min_y, max_y)
 
     def rand_free_pos(self):
-
         pos_x = randrange(*self.x_range, 1)
         pos_y = randrange(*self.y_range, 1)
 
@@ -267,7 +274,6 @@ class Game(object):
         return x * BLOCK_SIZE, y * BLOCK_SIZE
 
     def show_element(self, element, pos=None):
-
         if pos is None:
             pos_x, pos_y = self.pos_on_screen(element.pos_x, element.pos_y)
         else:
@@ -301,6 +307,7 @@ class Game(object):
         self.update_elements()
         self.check_if_game_ends()
         self.draw_screen()
+        # self.map.print()
 
     def end_game(self, event):
         self.should_run = False
