@@ -5,7 +5,7 @@ from random import randrange
 import pandas as pd
 
 
-MAP_SIZE = [50, 50]
+MAP_SIZE = [20, 20]
 SIZE_X = MAP_SIZE[0]
 SIZE_Y = MAP_SIZE[1]
 
@@ -13,8 +13,7 @@ START_POS = [int(SIZE_X / 2), int(SIZE_Y / 2)]
 START_POS_X = START_POS[0]
 START_POS_Y = START_POS[1]
 
-HUMAN_DELAY = 0.04
-BOT_DELAY = 0.01
+TICK_DELAY = 0.04
 
 DEFAULT_SIZE = 10
 DEFAULT_COLOR = "#aaaaaa"
@@ -38,23 +37,28 @@ class Map():
         try:
             element = self.board[x][y]
         except IndexError:
-            print(x, y)
             element = 0
 
         return element
 
     def set_position(self, x, y, elem_id):
-        self.board[x][y] = elem_id
+        try:
+            self.board[x][y] = elem_id
+        except IndexError:
+            print(x, y)
+            raise Exception
+
         return elem_id
 
     def print(self):
-        board_df = pd.DataFrame(data=self.map.board)
+        board_df = pd.DataFrame(data=self.board)
         with pd.option_context(
                 'display.max_rows',
                 None,
                 'display.max_columns',
                 None):
             print(board_df)
+            print()
 
     @staticmethod
     def init_empty_board(size_x, size_y):
@@ -74,7 +78,7 @@ class Game(object):
             size_x=SIZE_X,
             size_y=SIZE_Y,
             show=True,
-            tick_delay=HUMAN_DELAY,
+            tick_delay=TICK_DELAY,
             win_title="Snake"):
 
         if show:
@@ -114,15 +118,6 @@ class Game(object):
         M = Map(size_x, size_y, Map.init_empty_board(size_x, size_y))
 
         return M
-
-    @staticmethod
-    def human_playable():
-        game = Game()
-
-        snake = game.add_snake(color='blue')
-        game.bind_snake_to_keys(snake)
-
-        return game
 
     def element_at(self, x, y):
         elem_id = self.map.on_position(x, y)
@@ -172,18 +167,11 @@ class Game(object):
         self.snakes.update({
             snake.elem_id: snake
         })
-        self.elements.update({
-            snake.elem_id: snake
-        })
 
         if bot is not None:
             self.bind_snake_to_bot(snake, bot)
 
         return snake
-
-    def remove_snake(self, snake):
-        self.snakes.pop(snake.elem_id, None)
-        self.elements.pop(snake.elem_id, None)
 
     def add_food(self, pos, replace=True):
         if pos == 'random_pos':
@@ -193,17 +181,7 @@ class Game(object):
 
         food = elm.Food(self, pos_x, pos_y, replace=replace)
 
-        self.elements.update({
-            food.elem_id: food
-        })
-
-        self.map.set_position(pos_x, pos_y, food.elem_id)
-
         return food
-
-    def remove_food(self, food):
-        self.elements.pop(food.elem_id, None)
-        self.map.set_position(food.pos_x, food.pos_y, 0)
 
     @property
     def x_range(self):
@@ -226,8 +204,9 @@ class Game(object):
         return pos_x, pos_y
 
     def update_elements(self):
-        for e in self.snakes:
-            self.snakes[e].update()
+        for s in self.snakes.values():
+            if s.is_alive:
+                s.update()
 
     def show_snake_score(self, i, snake):
             screen_size_x, screen_size_y = self.screen_map_size()
@@ -306,8 +285,28 @@ class Game(object):
         self.clear_screen()
         self.update_elements()
         self.check_if_game_ends()
+
+        # food = [
+        #     e for e in self.elements.keys()
+        #     if self.elements[e].elem_type == 'food']
+        # print('food:')
+        # print(food)
+
+        heads = [
+            e for e in self.elements.keys()
+            if self.elements[e].elem_type == 'head']
+        print('heads:')
+        print(heads)
+
+        tails = [
+            e for e in self.elements.keys()
+            if self.elements[e].elem_type == 'tail']
+        print('tails:')
+        print(tails)
+
+        self.map.print()
+
         self.draw_screen()
-        # self.map.print()
 
     def end_game(self, event):
         self.should_run = False

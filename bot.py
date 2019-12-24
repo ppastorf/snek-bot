@@ -77,6 +77,11 @@ def get_args():
         help='Snakes do not die when hitting each other')
 
     argparser.add_argument(
+        '--human',
+        action='store_true',
+        help='Add an keyboard controlled snake')
+
+    argparser.add_argument(
         '--no-food-replace',
         action='store_true',
         help='Do not replace food when eaten')
@@ -88,6 +93,10 @@ def get_args():
 if __name__ == '__main__':
     args = get_args()
     game = Game()
+
+    if args['human']:
+        snake = game.add_snake(color=new_color())
+        game.bind_snake_to_keys(snake)
 
     for i in range(int(args['snakes'])):
         bot = Bot(name=new_color())

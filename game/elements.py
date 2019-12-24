@@ -31,10 +31,11 @@ class Element(object):
         self.elem_type = elem_type
         self.elem_id = self.game.new_elem_id()
 
-    def update(self):
         self.game.elements.update({
             self.elem_id: self
         })
+
+        self.set_map_pos()
 
     def show(self):
         self.game.show_element(self)
@@ -44,6 +45,21 @@ class Element(object):
 
     def set_map_pos(self):
         self.game.map.set_position(self.pos_x, self.pos_y, self.elem_id)
+
+    def clear_map_pos(self, pos=None):
+        if pos is None:
+            pos_x, pos_y = self.pos
+        else:
+            pos_x, pos_y = pos
+
+        self.game.map.set_position(pos_x, pos_y, 0)
+
+    def expire(self, pos=None):
+        if pos is None:
+            pos = self.pos
+
+        self.clear_map_pos(pos=pos)
+        self.game.elements.pop(self.elem_id, None)
 
     @property
     def pos(self):
@@ -113,7 +129,6 @@ class SnakeTail(Element):
             self,
             master,
             last_part,
-            elem_type="tail",
             size=SNAKE_SIZE,
             color=SNAKE_COLOR):
 
@@ -123,6 +138,7 @@ class SnakeTail(Element):
             last_part.last_pos_y,
             size=size,
             color=color,
+            elem_type="tail"
         )
 
         self.last_part = last_part
@@ -141,6 +157,10 @@ class SnakeTail(Element):
         self._update_last_position()
         self._update_position()
 
+    @property
+    def last_pos(self):
+        return (self.last_pos_x, self.last_pos_y)
+
 
 class SnakeHead(Element):
 
@@ -149,7 +169,6 @@ class SnakeHead(Element):
             master,
             start_x,
             start_y,
-            elem_type="head",
             size=SNAKE_SIZE,
             color=SNAKE_COLOR):
 
@@ -158,10 +177,11 @@ class SnakeHead(Element):
             start_x,
             start_y,
             size=size,
-            color=color
+            color=color,
+            elem_type="head"
         )
 
-        self.last_pos_x = start_x + self.size
+        self.last_pos_x = start_x
         self.last_pos_y = start_y
 
     def walk(self, direction):
@@ -180,6 +200,10 @@ class SnakeHead(Element):
         if direction == 'down':
             self.pos_y += 1
 
+    @property
+    def last_pos(self):
+        return (self.last_pos_x, self.last_pos_y)
+
 
 class Snake(object):
     def __init__(
@@ -188,7 +212,7 @@ class Snake(object):
             start_x,
             start_y,
             start_dir='left',
-            lenght=1,
+            tail_lenght=1,
             color=SNAKE_COLOR,
             size=SNAKE_SIZE):
 
@@ -213,27 +237,15 @@ class Snake(object):
         self.elem_type = "snake"
         self.elem_id = self.game.new_elem_id()
 
-        for i in range(lenght):
+        for i in range(tail_lenght):
             self.tail.append(
                 SnakeTail(self, self.head, color=self.tail_color)
             )
 
-    def show_tail(self):
-        for i in range(self.tail_length):
-            self.tail[i].show()
-
-    def show(self):
-        if self.is_alive:
-            self.head.show()
-            self.show_tail()
-
     def walk(self):
         self.head.walk(self.direction)
-        self.head.set_map_pos()
-
         for i in range(self.tail_length):
             self.tail[i].walk()
-            self.tail[i].set_map_pos()
 
     def take_turn(self):
         return self.next_dir
@@ -262,7 +274,7 @@ class Snake(object):
         self.direction = new_dir
 
     def eat(self, food):
-        self.game.remove_food(food)
+        food.expire()
         self.tail.append(
             SnakeTail(
                 self,
@@ -276,9 +288,11 @@ class Snake(object):
         min_x, max_x = self.game.x_range
         min_y, max_y = self.game.y_range
 
+        pos_x, pos_y = self.pos
+
         out_of_bounds = (
-            (self.pos_x >= max_x or self.pos_x < min_x) or
-            (self.pos_y >= max_y or self.pos_y < min_y)
+            (pos_x >= max_x or pos_x < min_x) or
+            (pos_y >= max_y or pos_y < min_y)
         )
 
         return not out_of_bounds
@@ -286,23 +300,22 @@ class Snake(object):
     def die(self):
         self.is_alive = False
 
-    def update(self):
-        self.head.update()
-        for part in self.tail:
-            part.update()
+        self.head.expire(pos=self.head.last_pos)
+        for t in self.tail:
+            t.expire(pos=t.last_pos)
 
-        if self.is_alive:
-            self.time_alive += self.game.tick_delay
-            self.walk()
+    def update(self):
+        self.time_alive += self.game.tick_delay
+        self.walk()
+
+        element = self.game.element_at(*self.pos)
+        if element is not None:
+            element.on_snake_hit(self)
 
         if not self.in_valid_position(map):
+            print(self.pos)
             self.die()
             return
-
-        element = self.game.element_at(*self.next_pos)
-        if element is not None:
-            print(element.elem_id)
-            element.on_snake_hit(self)
 
         self.turn()
 
@@ -331,19 +344,6 @@ class Snake(object):
         return self.head.pos
 
     @property
-    def next_pos(self):
-        if self.direction == 'left':
-            next_pos = (self.pos_x-1, self.pos_y)
-        if self.direction == 'right':
-            next_pos = (self.pos_x+1, self.pos_y)
-        if self.direction == 'up':
-            next_pos = (self.pos_x, self.pos_y-1)
-        if self.direction == 'down':
-            next_pos = (self.pos_x, self.pos_y+1)
-
-        return next_pos
-
-    @property
     def state(self):
         values = {
             'id': self.elem_id,
@@ -353,7 +353,7 @@ class Snake(object):
             'dir': self.direction,
             'length': self.length,
             'alive': self.is_alive,
-            'bind': self.bind.name
+            'bind': self.bind['name']
         }
 
         state = pd.Series(data=values)
