@@ -126,8 +126,6 @@ class Game(object):
         if elem_id == 0:
             return None
 
-        print(self.elements)
-
         return self.elements[elem_id]
 
     def bind_snake_to_keys(self, snake):

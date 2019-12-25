@@ -52,12 +52,14 @@ class Element(object):
         else:
             pos_x, pos_y = pos
 
+        # print('  clearing', pos)]
         self.game.map.set_position(pos_x, pos_y, 0)
 
     def expire(self, pos=None):
         if pos is None:
             pos = self.pos
 
+        print('expiring', pos)
         self.clear_map_pos(pos=pos)
         self.game.elements.pop(self.elem_id, None)
 

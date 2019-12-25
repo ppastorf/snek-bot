@@ -95,7 +95,7 @@ if __name__ == '__main__':
     game = Game()
 
     if args['human']:
-        snake = game.add_snake(color=new_color(), start_length=10)
+        snake = game.add_snake(color=new_color())
         game.bind_snake_to_keys(snake)
 
     for i in range(int(args['snakes'])):
