@@ -92,10 +92,13 @@ def get_args():
 
 if __name__ == '__main__':
     args = get_args()
-    game = Game()
+    game = Game(
+        collision=not args['no_collision'],
+        self_collision=not args['no_self_collision']
+    )
 
     if args['human']:
-        snake = game.add_snake(color=new_color())
+        snake = game.add_snake(color=new_color(), start_length=10)
         game.bind_snake_to_keys(snake)
 
     for i in range(int(args['snakes'])):
@@ -103,8 +106,8 @@ if __name__ == '__main__':
         game.add_snake(
             bot=bot,
             color=bot.name,
-            start_x=i * 2,
-            start_y=i * 2,
+            start_x=i * 5,
+            start_y=i * 5,
         )
 
     for i in range(int(args['food'])):

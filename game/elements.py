@@ -1,5 +1,5 @@
 import pandas as pd
-
+from random import randint
 
 BLOCK_SIZE = 10
 DEFAULT_COLOR = "#aaaaaa"
@@ -52,14 +52,12 @@ class Element(object):
         else:
             pos_x, pos_y = pos
 
-        # print('  clearing', pos)]
         self.game.map.set_position(pos_x, pos_y, 0)
 
     def expire(self, pos=None):
         if pos is None:
             pos = self.pos
 
-        print('expiring', pos)
         self.clear_map_pos(pos=pos)
         self.game.elements.pop(self.elem_id, None)
 
@@ -143,6 +141,7 @@ class SnakeTail(Element):
             elem_type="tail"
         )
 
+        self.master = master
         self.last_part = last_part
         self.last_pos_x = self.pos_x
         self.last_pos_y = self.pos_y
@@ -155,7 +154,21 @@ class SnakeTail(Element):
         self.pos_y = self.last_part.last_pos_y
 
     def on_snake_hit(self, snake):
-        snake.die()
+        if self.game.collision and self.master.elem_id != snake.elem_id:
+            if self.master.tail_length > snake.tail_length:
+                snake.die()
+            elif self.master.tail_length < snake.tail_length:
+                self.master.die()
+            else:
+                rip = randint(0, 1)
+                if rip:
+                    self.master.die()
+                else:
+                    snake.die()
+
+        if (self.game.self_collision and
+                self.master.elem_id == snake.elem_id):
+            snake.die()
 
     @property
     def last_pos(self):
@@ -181,6 +194,7 @@ class SnakeHead(Element):
             elem_type="head"
         )
 
+        self.master = master
         self.last_pos_x = start_x
         self.last_pos_y = start_y
 
@@ -201,7 +215,21 @@ class SnakeHead(Element):
             self.pos_y += 1
 
     def on_snake_hit(self, snake):
-        snake.die()
+        if self.game.collision and self.master.elem_id != snake.elem_id:
+            if self.master.tail_length > snake.tail_length:
+                snake.die()
+            elif self.master.tail_length < snake.tail_length:
+                self.master.die()
+            else:
+                rip = randint(0, 1)
+                if rip:
+                    self.master.die()
+                else:
+                    snake.die()
+
+        if (self.game.self_collision and
+                self.master.elem_id == snake.elem_id):
+            snake.die()
 
     @property
     def last_pos(self):
@@ -287,7 +315,6 @@ class Snake(object):
         )
 
     def in_valid_position(self, map):
-
         min_x, max_x = self.game.x_range
         min_y, max_y = self.game.y_range
 
@@ -320,11 +347,13 @@ class Snake(object):
             element.on_snake_hit(self)
 
         self.head.clear_map_pos(pos=self.head.last_pos)
-        self.head.set_map_pos()
+        if self.is_alive:
+            self.head.set_map_pos()
 
         for part in self.tail:
             part.clear_map_pos(pos=part.last_pos)
-            part.set_map_pos()
+            if self.is_alive:
+                part.set_map_pos()
 
         self.turn()
 

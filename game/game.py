@@ -5,7 +5,7 @@ from random import randrange
 import pandas as pd
 
 
-MAP_SIZE = [20, 20]
+MAP_SIZE = [50, 50]
 SIZE_X = MAP_SIZE[0]
 SIZE_Y = MAP_SIZE[1]
 
@@ -80,6 +80,8 @@ class Game(object):
             size_y=SIZE_Y,
             show=True,
             tick_delay=TICK_DELAY,
+            collision=True,
+            self_collision=True,
             win_title="Snake"):
 
         if show:
@@ -107,6 +109,9 @@ class Game(object):
         self.canvas = canvas
 
         self.tick_delay = tick_delay
+
+        self.collision = collision
+        self.self_collision = self_collision
 
         self.playtime = 0.0
         self.should_run = True
@@ -291,25 +296,22 @@ class Game(object):
         self.update_elements()
         self.check_if_game_ends()
 
-        # food = [
-        #     e for e in self.elements.keys()
-        #     if self.elements[e].elem_type == 'food']
-        # print('food:')
-        # print(food)
-
-        heads = [
+        food = [
             e for e in self.elements.keys()
-            if self.elements[e].elem_type == 'head']
-        print('heads:')
-        print(heads)
+            if self.elements[e].elem_type == 'food']
+        print('food:')
+        print(food)
 
-        tails = [
-            e for e in self.elements.keys()
-            if self.elements[e].elem_type == 'tail']
-        print('tails:')
-        print(tails)
+        print('snakes:')
+        for s in self.snakes.values():
+            if s.is_alive:
+                sn = [s.head.elem_id]
+                for t in s.tail:
+                    sn.append(t.elem_id)
+                print(sn)
 
         self.map.print()
+
         self.draw_screen()
 
     def end_game(self, event):
