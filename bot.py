@@ -95,12 +95,17 @@ if __name__ == '__main__':
     game = Game()
 
     if args['human']:
-        snake = game.add_snake(color=new_color())
+        snake = game.add_snake(color=new_color(), start_length=10)
         game.bind_snake_to_keys(snake)
 
     for i in range(int(args['snakes'])):
         bot = Bot(name=new_color())
-        game.add_snake(bot=bot, color=bot.name)
+        game.add_snake(
+            bot=bot,
+            color=bot.name,
+            start_x=i * 2,
+            start_y=i * 2,
+        )
 
     for i in range(int(args['food'])):
         food = game.add_food('random_pos', replace=not args['no_food_replace'])

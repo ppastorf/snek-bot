@@ -27,6 +27,11 @@ class GameOver(Exception):
     pass
 
 
+class HumanBind(object):
+    def __init__(self):
+        self.name = 'player'
+
+
 class Map():
     def __init__(self, size_x, size_y, board):
         self.size_x = size_x
@@ -42,11 +47,7 @@ class Map():
         return element
 
     def set_position(self, x, y, elem_id):
-        try:
-            self.board[x][y] = elem_id
-        except IndexError:
-            print(x, y)
-            raise Exception
+        self.board[x][y] = elem_id
 
         return elem_id
 
@@ -125,6 +126,8 @@ class Game(object):
         if elem_id == 0:
             return None
 
+        print(self.elements)
+
         return self.elements[elem_id]
 
     def bind_snake_to_keys(self, snake):
@@ -136,9 +139,7 @@ class Game(object):
         self.root.bind('<Up>', snake.keyboard_direction)
         self.root.bind('<Down>', snake.keyboard_direction)
 
-        snake.bind = {
-            'name': 'player'
-        }
+        snake.bind = HumanBind()
 
     def bind_snake_to_bot(self, snake, bot):
         if snake.bind is not None:
@@ -158,10 +159,16 @@ class Game(object):
             start_y=START_POS_Y,
             bot=None,
             color=elm.SNAKE_COLOR,
+            start_length=1,
             direction='left'):
 
         snake = elm.Snake(
-            self, start_x, start_y, start_dir=direction, color=color
+            self,
+            start_x,
+            start_y,
+            start_dir=direction,
+            color=color,
+            start_length=start_length
         )
 
         self.snakes.update({
@@ -305,7 +312,6 @@ class Game(object):
         print(tails)
 
         self.map.print()
-
         self.draw_screen()
 
     def end_game(self, event):

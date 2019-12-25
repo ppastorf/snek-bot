@@ -145,17 +145,15 @@ class SnakeTail(Element):
         self.last_pos_x = self.pos_x
         self.last_pos_y = self.pos_y
 
-    def _update_last_position(self):
+    def walk(self):
         self.last_pos_x = self.pos_x
         self.last_pos_y = self.pos_y
 
-    def _update_position(self):
         self.pos_x = self.last_part.last_pos_x
         self.pos_y = self.last_part.last_pos_y
 
-    def walk(self):
-        self._update_last_position()
-        self._update_position()
+    def on_snake_hit(self, snake):
+        snake.die()
 
     @property
     def last_pos(self):
@@ -200,6 +198,9 @@ class SnakeHead(Element):
         if direction == 'down':
             self.pos_y += 1
 
+    def on_snake_hit(self, snake):
+        snake.die()
+
     @property
     def last_pos(self):
         return (self.last_pos_x, self.last_pos_y)
@@ -212,7 +213,7 @@ class Snake(object):
             start_x,
             start_y,
             start_dir='left',
-            tail_lenght=1,
+            start_length=1,
             color=SNAKE_COLOR,
             size=SNAKE_SIZE):
 
@@ -237,10 +238,10 @@ class Snake(object):
         self.elem_type = "snake"
         self.elem_id = self.game.new_elem_id()
 
-        for i in range(tail_lenght):
-            self.tail.append(
-                SnakeTail(self, self.head, color=self.tail_color)
-            )
+        last_part = self.head
+        for i in range(start_length):
+            last_part = SnakeTail(self, last_part, color=self.tail_color)
+            self.tail.append(last_part)
 
     def walk(self):
         self.head.walk(self.direction)
@@ -308,20 +309,22 @@ class Snake(object):
         self.time_alive += self.game.tick_delay
         self.walk()
 
+        if not self.in_valid_position(map):
+            self.die()
+            return
+
         element = self.game.element_at(*self.pos)
         if element is not None:
             element.on_snake_hit(self)
 
-        if not self.in_valid_position(map):
-            print(self.pos)
-            self.die()
-            return
+        self.head.clear_map_pos(pos=self.head.last_pos)
+        self.head.set_map_pos()
+
+        for part in self.tail:
+            part.clear_map_pos(pos=part.last_pos)
+            part.set_map_pos()
 
         self.turn()
-
-    def on_snake_hit(self, snake):
-        if snake.elem_id != self.elem_id:
-            snake.die()
 
     @property
     def tail_length(self):
@@ -353,7 +356,7 @@ class Snake(object):
             'dir': self.direction,
             'length': self.length,
             'alive': self.is_alive,
-            'bind': self.bind['name']
+            'bind': self.bind.name
         }
 
         state = pd.Series(data=values)
