@@ -1,17 +1,12 @@
 from tkinter import *
 from time import sleep
 from . import elements as elm
-from random import randrange
+from random import randint
 import pandas as pd
 
 
-MAP_SIZE = [50, 50]
-SIZE_X = MAP_SIZE[0]
-SIZE_Y = MAP_SIZE[1]
-
-START_POS = [int(SIZE_X / 2), int(SIZE_Y / 2)]
-START_POS_X = START_POS[0]
-START_POS_Y = START_POS[1]
+DEFAULT_X = 50
+DEFAULT_Y = 50
 
 TICK_DELAY = 0.04
 
@@ -76,12 +71,13 @@ class Map():
 class Game(object):
     def __init__(
             self,
-            size_x=SIZE_X,
-            size_y=SIZE_Y,
+            size_x=DEFAULT_X,
+            size_y=DEFAULT_Y,
             show=True,
             tick_delay=TICK_DELAY,
             collision=True,
             self_collision=True,
+            debug=False,
             win_title="Snake"):
 
         if show:
@@ -118,8 +114,10 @@ class Game(object):
 
         self.map = self.parse_map_file('file')
 
+        self.debug = debug
+
     def parse_map_file(self, file):
-        size_x, size_y = SIZE_X, SIZE_Y
+        size_x, size_y = self.size_x, self.size_y
 
         M = Map(size_x, size_y, Map.init_empty_board(size_x, size_y))
 
@@ -158,8 +156,8 @@ class Game(object):
 
     def add_snake(
             self,
-            start_x=START_POS_X,
-            start_y=START_POS_Y,
+            start_x,
+            start_y,
             bot=None,
             color=elm.SNAKE_COLOR,
             start_length=1,
@@ -198,20 +196,24 @@ class Game(object):
         min_x = 0
         max_x = self.map.size_x
 
-        return (min_x, max_x)
+        return (min_x, max_x - 1)
 
     @property
     def y_range(self):
         min_y = 0
         max_y = self.map.size_y
 
-        return (min_y, max_y)
+        return (min_y, max_y - 1)
 
     def rand_free_pos(self):
-        pos_x = randrange(*self.x_range, 1)
-        pos_y = randrange(*self.y_range, 1)
+        x = randint(*self.x_range)
+        y = randint(*self.y_range)
 
-        return pos_x, pos_y
+        while self.map.on_position(x, y) != 0:
+            x = randint(*self.x_range)
+            y = randint(*self.y_range)
+
+        return x, y
 
     def update_elements(self):
         for s in self.snakes.values():
@@ -296,21 +298,22 @@ class Game(object):
         self.update_elements()
         self.check_if_game_ends()
 
-        food = [
-            e for e in self.elements.keys()
-            if self.elements[e].elem_type == 'food']
-        print('food:')
-        print(food)
+        if self.debug:
+            food = [
+                e for e in self.elements.keys()
+                if self.elements[e].elem_type == 'food']
+            print('food:')
+            print(food)
 
-        print('snakes:')
-        for s in self.snakes.values():
-            if s.is_alive:
-                sn = [s.head.elem_id]
-                for t in s.tail:
-                    sn.append(t.elem_id)
-                print(sn)
+            print('snakes:')
+            for s in self.snakes.values():
+                if s.is_alive:
+                    sn = [s.head.elem_id]
+                    for t in s.tail:
+                        sn.append(t.elem_id)
+                    print(sn)
 
-        self.map.print()
+            self.map.print()
 
         self.draw_screen()
 

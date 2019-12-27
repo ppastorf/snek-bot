@@ -82,6 +82,23 @@ def get_args():
         help='Add an keyboard controlled snake')
 
     argparser.add_argument(
+        '--debug',
+        action='store_true',
+        help='Print debug info')
+
+    argparser.add_argument(
+        '--map-x',
+        action='store',
+        help='Map x size',
+        default=50)
+
+    argparser.add_argument(
+        '--map-y',
+        action='store',
+        help='Map y size',
+        default=50)
+
+    argparser.add_argument(
         '--no-food-replace',
         action='store_true',
         help='Do not replace food when eaten')
@@ -94,20 +111,23 @@ if __name__ == '__main__':
     args = get_args()
     game = Game(
         collision=not args['no_collision'],
-        self_collision=not args['no_self_collision']
+        self_collision=not args['no_self_collision'],
+        debug=args['debug'],
+        size_x=int(args['map_x']),
+        size_y=int(args['map_y']),
     )
 
     if args['human']:
-        snake = game.add_snake(color=new_color(), start_length=10)
+        snake = game.add_snake(color=new_color())
         game.bind_snake_to_keys(snake)
 
     for i in range(int(args['snakes'])):
         bot = Bot(name=new_color())
         game.add_snake(
+            start_x=i * 3,
+            start_y=i * 3,
             bot=bot,
-            color=bot.name,
-            start_x=i * 5,
-            start_y=i * 5,
+            color=bot.name
         )
 
     for i in range(int(args['food'])):
