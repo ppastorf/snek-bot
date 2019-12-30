@@ -1,5 +1,5 @@
 from game import Game
-from random import randrange
+from random import randint
 import pandas as pd
 import argparse
 
@@ -18,7 +18,7 @@ class Bot(object):
         }
 
     def take_turn(self):
-        dir_index = randrange(0, len(self.dir_map.keys()), 1)
+        dir_index = randint(0, len(self.dir_map.keys()) - 1)
         self.snake.next_dir = self.dir_map[dir_index]
 
         return self.snake.next_dir
@@ -32,26 +32,6 @@ class Bot(object):
 
         state = pd.Series(data=values)
         return state
-
-
-def new_color():
-    COLORS = [
-        'red',
-        'blue',
-        'yellow',
-        'pink',
-        'violet',
-        'orange',
-        'gray',
-        'maroon'
-    ]
-
-    color = new_color.count % len(COLORS)
-    new_color.count += 1
-    return COLORS[color]
-
-
-new_color.count = 0
 
 
 def get_args():
@@ -82,15 +62,16 @@ def get_args():
         help='Add an keyboard controlled snake')
 
     argparser.add_argument(
-        '--debug',
-        action='store_true',
-        help='Print debug info')
-
-    argparser.add_argument(
         '--map-x',
         action='store',
         help='Map x size',
         default=50)
+
+    argparser.add_argument(
+        '--tick-delay',
+        action='store',
+        help='TIme between every game tick in seconds',
+        default=0.04)
 
     argparser.add_argument(
         '--map-y',
@@ -102,8 +83,23 @@ def get_args():
         '--no-food-replace',
         action='store_true',
         help='Do not replace food when eaten')
-    args = argparser.parse_args()
 
+    argparser.add_argument(
+        '--debug',
+        action='store_true',
+        help='Print debug info')
+
+    argparser.add_argument(
+        '--no-show',
+        action='store_true',
+        help='Do not show the game interface')
+
+    argparser.add_argument(
+        '--no-output',
+        action='store_true',
+        help='Do not print any output')
+
+    args = argparser.parse_args()
     return vars(args)
 
 
@@ -115,19 +111,20 @@ if __name__ == '__main__':
         debug=args['debug'],
         size_x=int(args['map_x']),
         size_y=int(args['map_y']),
+        tick_delay=float(args['tick_delay']),
+        show=not args['no_show']
     )
 
     if args['human']:
-        snake = game.add_snake(color=new_color())
+        snake = game.add_snake(
+            int(game.size_x / 2), int(game.size_y / 2))
         game.bind_snake_to_keys(snake)
 
     for i in range(int(args['snakes'])):
-        bot = Bot(name=new_color())
+        bot = Bot(name='aa')
         game.add_snake(
-            start_x=i * 3,
-            start_y=i * 3,
+            i * 3, i * 3,
             bot=bot,
-            color=bot.name
         )
 
     for i in range(int(args['food'])):
@@ -135,4 +132,5 @@ if __name__ == '__main__':
 
     game.play()
 
-    print(game.game_state.to_string(index=False))
+    if not args['no_output']:
+        print(game.game_state.to_string(index=False))

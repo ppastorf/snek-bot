@@ -94,6 +94,13 @@ class Game(object):
             root = None
             canvas = None
 
+            def no_op():
+                pass
+
+            self.clear_screen = no_op
+            self.draw_screen = no_op
+            self.end = no_op
+
         self.elem_count = 0
         self.elements = {}
         self.snakes = {}
@@ -115,6 +122,22 @@ class Game(object):
         self.map = self.parse_map_file('file')
 
         self.debug = debug
+        self.color_count = 0
+
+    def new_color(self):
+        COLORS = [
+            'red',
+            'blue',
+            'yellow',
+            'pink',
+            'violet',
+            'orange',
+            'gray',
+            'maroon'
+        ]
+        color = self.color_count % len(COLORS)
+        self.color_count += 1
+        return COLORS[color]
 
     def parse_map_file(self, file):
         size_x, size_y = self.size_x, self.size_y
@@ -159,9 +182,12 @@ class Game(object):
             start_x,
             start_y,
             bot=None,
-            color=elm.SNAKE_COLOR,
+            color=None,
             start_length=1,
             direction='left'):
+
+        if color is None:
+            color = self.new_color()
 
         snake = elm.Snake(
             self,
@@ -281,7 +307,7 @@ class Game(object):
         self.show_score()
 
         for e in self.elements.values():
-            e.show()
+            self.show_element(e)
 
         self.root.update_idletasks()
         self.root.update()
@@ -293,28 +319,29 @@ class Game(object):
         if not any([snake.is_alive for snake in self.snakes.values()]):
             raise GameOver
 
+    def print_debug_info(self):
+        food = [
+            e for e in self.elements.keys()
+            if self.elements[e].elem_type == 'food']
+        print('food:')
+        print(food)
+
+        print('snakes:')
+        for s in self.snakes.values():
+            if s.is_alive:
+                sn = [s.head.elem_id]
+                for t in s.tail:
+                    sn.append(t.elem_id)
+                print(sn)
+
+        self.map.print()
+
     def tick(self):
         self.clear_screen()
         self.update_elements()
         self.check_if_game_ends()
-
         if self.debug:
-            food = [
-                e for e in self.elements.keys()
-                if self.elements[e].elem_type == 'food']
-            print('food:')
-            print(food)
-
-            print('snakes:')
-            for s in self.snakes.values():
-                if s.is_alive:
-                    sn = [s.head.elem_id]
-                    for t in s.tail:
-                        sn.append(t.elem_id)
-                    print(sn)
-
-            self.map.print()
-
+            self.print_debug_info()
         self.draw_screen()
 
     def end_game(self, event):
