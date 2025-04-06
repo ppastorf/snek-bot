@@ -27,6 +27,36 @@ class HumanBind(object):
         self.name = 'player'
 
 
+class Bot(object):
+
+    def __init__(self, name="bot"):
+        self.name = name
+        self.snake = None
+
+        self.dir_map = {
+            0: 'left',
+            1: 'right',
+            2: 'up',
+            3: 'down'
+        }
+
+    def take_turn(self):
+        dir_index = randint(0, len(self.dir_map.keys()) - 1)
+        self.snake.next_dir = self.dir_map[dir_index]
+
+        return self.snake.next_dir
+
+    @property
+    def info(self):
+        values = {
+            "name": self.name,
+            "bind": self.snake.elem_id
+        }
+
+        state = pd.Series(data=values)
+        return state
+
+
 class Map():
     def __init__(self, size_x, size_y, board):
         self.size_x = size_x
@@ -78,6 +108,10 @@ class Game(object):
             collision=True,
             self_collision=True,
             debug=False,
+            food=1,
+            food_replace=True,
+            bot_snakes=0,
+            human=True,
             win_title="Snake"):
 
         if show:
@@ -123,6 +157,23 @@ class Game(object):
 
         self.debug = debug
         self.color_count = 0
+
+        self.food = food
+
+        for i in range(int(food)):
+            self.add_food('random_pos', replace=food_replace)
+
+        for i in range(int(bot_snakes)):
+            bot = Bot(name='aa')
+            self.add_snake(
+                i * 3, i * 3,
+                bot=bot,
+            )
+
+        if human:
+            snake = self.add_snake(
+                int(self.size_x / 2), int(self.size_y / 2))
+            self.bind_snake_to_keys(snake)
 
     def new_color(self):
         COLORS = [
