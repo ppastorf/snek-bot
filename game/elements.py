@@ -1,12 +1,14 @@
 import pandas as pd
+import math
 from random import randint
 
 ELEMENT_SIZE = 10
 DEFAULT_COLOR = "#aaaaaa"
 
+VISION_COLOR = "#40ff3d"
 FOOD_COLOR = "#006600"
-WALL_COLOR = "0000000"
-
+WALL_COLOR = "black"
+VISION_DEPTH = 100
 
 class Element(object):
     def __init__(
@@ -68,6 +70,7 @@ class Element(object):
         state = pd.Series(data=values)
 
         return state
+
 
 
 class Food(Element):
@@ -237,6 +240,7 @@ class Snake(object):
         self.next_dir = start_dir
 
         self.head = SnakeHead(self, start_x, start_y)
+        self.vision = SnakeVision(self, VISION_DEPTH)
         self.tail = []
         self.turns = 0
         self.time_alive = 0.0
@@ -334,6 +338,8 @@ class Snake(object):
             if self.is_alive:
                 part.set_map_pos()
 
+        self.vision.update()
+
     @property
     def tail_length(self):
         return len(self.tail)
@@ -374,3 +380,85 @@ class Snake(object):
     def keyboard_direction(self, event):
         direction = event.keysym.lower()
         self.next_dir = direction
+
+
+class PolarCoordinates(object):
+    def __init__(self, center_x, center_y, point_x, point_y):
+        distance, theta = self._calc(center_x, center_y, point_x, point_y)
+        self.distance = distance
+        self.theta = theta
+
+    def _calc(self, x1, y1, x2, y2):
+        r = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+        theta = math.atan2(y2 - y1, x2 - x1)
+    
+        return r, theta
+
+
+class VisionElement(object):
+    type_map = {
+        'food': 1,
+        'tail': 2,
+        'head': 3,
+        'wall': 4,
+    }
+    def __init__(self, snake, type, pos_x, pos_y):
+        self.snake = snake
+        self.color = VISION_COLOR
+        self.size  = ELEMENT_SIZE
+        self.type  = self.type_map.get(type, 0)
+        self.coord = PolarCoordinates(self.snake.head.pos_x, self.snake.head.pos_y, pos_x, pos_y)
+
+    @property
+    def as_dataframe(self):
+        return pd.DataFrame({
+            'type': [self.type],
+            'r': [self.coord.distance],
+            'theta': [self.coord.theta],
+        })
+
+
+class SnakeVision(object):
+    def __init__(self, snake, depth):
+        self.snake = snake
+        self.depth = 100
+        self.elements = []
+    
+    def update(self):
+        self.elements = self._update_tiles(self.snake.head.pos_x, self.snake.head.pos_y, self.snake.direction, self.depth)
+        # print(self.as_dataframe.to_string(index=False))
+    
+    @property
+    def as_dataframe(self):
+        if len(self.elements):
+            return pd.concat([e.as_dataframe for e in self.elements], ignore_index=True)
+        else:
+            return pd.DataFrame()
+
+    def _update_tiles(self, ax, ay, direction, depth):
+        elements = []
+        for d in range(1, depth + 1):
+            for offset in range(-d + 1, d):
+                if direction == 'up':
+                    px, py = ax + offset, ay - d
+                elif direction == 'down':
+                    px, py = ax + offset, ay + d
+                elif direction == 'left':
+                    px, py = ax - d, ay + offset
+                elif direction == 'right':
+                    px, py = ax + d, ay + offset
+                else:
+                    continue
+                if (
+                    0 <= px < self.snake.game.size_x 
+                    and 0 <= py < self.snake.game.size_y
+                    ):
+                    element = self.snake.game.element_at(px, py)
+                    if element != None:
+                        elem_type = element.elem_type
+                    else:
+                        elem_type = "clear"
+
+                    ve = VisionElement(self.snake, elem_type, px, py)
+                    elements.append(ve)
+        return elements

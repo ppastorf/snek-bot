@@ -1,3 +1,4 @@
+import os
 from tkinter import *
 from time import sleep
 from . import elements as elm
@@ -10,13 +11,21 @@ DEFAULT_Y = 50
 
 TICK_DELAY = 0.04
 
+ELEMENT_SIZE = 10
 DEFAULT_SIZE = 10
 DEFAULT_COLOR = "#aaaaaa"
+
 
 BLOCK_SIZE = 10
 
 SCORE_OFFSET = 30
 
+DIR_MAP = {
+    0: 'left',
+    1: 'right',
+    2: 'up',
+    3: 'down'
+}
 
 class GameOver(Exception):
     pass
@@ -27,22 +36,15 @@ class HumanBind(object):
         self.name = 'player'
 
 
-class Bot(object):
 
+class Bot(object):
     def __init__(self, name="bot"):
         self.name = name
         self.snake = None
 
-        self.dir_map = {
-            0: 'left',
-            1: 'right',
-            2: 'up',
-            3: 'down'
-        }
-
     def take_turn(self):
-        dir_index = randint(0, len(self.dir_map.keys()) - 1)
-        self.snake.next_dir = self.dir_map[dir_index]
+        dir_index = randint(0, len(DIR_MAP.keys()) - 1)
+        self.snake.next_dir = DIR_MAP[dir_index]
 
         return self.snake.next_dir
 
@@ -163,6 +165,14 @@ class Game(object):
         for i in range(int(food)):
             self.add_food('random_pos', replace=food_replace)
 
+        for i in range(self.size_x):
+            self.add_wall((i, 0))
+            self.add_wall((i, size_y-1))
+
+        for i in range(self.size_y):
+            self.add_wall((0, i))
+            self.add_wall((size_x-1, i))
+
         for i in range(int(bot_snakes)):
             bot = Bot(name='aa')
             self.add_snake(
@@ -263,10 +273,11 @@ class Game(object):
             pos_x, pos_y = self.rand_free_pos()
         else:
             pos_x, pos_y = pos
+        return elm.Food(self, pos_x, pos_y, replace=replace)
 
-        food = elm.Food(self, pos_x, pos_y, replace=replace)
-
-        return food
+    def add_wall(self, pos):
+        pos_x, pos_y = pos
+        return elm.Wall(self, pos_x, pos_y)
 
     @property
     def x_range(self):
@@ -363,6 +374,10 @@ class Game(object):
         self.root.update_idletasks()
         self.root.update()
 
+
+    def clear_term(self):
+        os.system('cls' if os.name == 'nt' else 'clear')
+
     def clear_screen(self):
         self.canvas.delete("all")
 
@@ -388,6 +403,9 @@ class Game(object):
         self.map.print()
 
     def tick(self):
+        # self.clear_term()
+        print("\n")
+        print(self.game_state.to_string(index=False))
         self.clear_screen()
         self.update_elements()
         self.check_if_game_ends()

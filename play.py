@@ -2,6 +2,7 @@ from game import Game
 from random import randint
 import pandas as pd
 import argparse
+import os
 
 
 def get_args():
