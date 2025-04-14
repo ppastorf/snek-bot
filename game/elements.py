@@ -239,7 +239,7 @@ class Snake(object):
         self.next_dir = start_dir
 
         self.head = SnakeHead(self, start_x, start_y)
-        self.vision = SnakeVision(self)
+        self.vision = BotVision(self)
         self.tail = []
         self.turns = 0
         self.time_alive = 0.0
@@ -395,21 +395,31 @@ class Snake(object):
         self.next_dir = direction
 
 
-class SnakeDecision:
-    _actions_map = {
-        'left': 'L',
-        'right': 'R',
-        # 'up': 'U',
-        # 'down': 'D'
-    }
-
-    @classmethod
-    def actions_vec(cls):
-        return list(cls._actions_map.values())
+class BotDecision(int):
+    _actions_vec = [
+        'left',
+        'right',
+        'up',
+        'down'
+    ]
 
     @classmethod
     def n_actions(cls):
-        return len(cls._actions_map.values())
+        return len(cls._actions_vec)
+
+    def __new__(cls, value):
+        return super().__new__(cls, value % cls.n_actions())
+
+    @property
+    def value(self):
+        # return self._actions_vec[self % self.n_actions]
+        return self._actions_vec[self]
+
+    def __repr__(self):
+        return f"{self.value}"
+
+    def __str__(self):
+        return f"{self.value}"
 
 
 class PolarCoordinates(object):
@@ -430,6 +440,8 @@ class VisionElement(object):
         'food': 2,
         'self_head': 3,
         'self_tail': 4,
+        'head': 5,
+        'tail': 5,
         'wall': 5,
     }
     def __init__(self, snake, type, pos_x, pos_y):
@@ -437,7 +449,7 @@ class VisionElement(object):
         self.color = VISION_COLOR
         self.size  = ELEMENT_SIZE
         self.type  = self.type_map.get(type, 1)
-        self.coord = PolarCoordinates(self.snake.head.pos_x, self.snake.head.pos_y, pos_x, pos_y)
+        # self.coord = PolarCoordinates(self.snake.head.pos_x, self.snake.head.pos_y, pos_x, pos_y)
 
     def __repr__(self):
         return f"{self.type}"
@@ -448,28 +460,15 @@ class VisionElement(object):
     @property
     def value(self):
         return self.type
-        # return [
-            # self.type,
-            # self.coord.distance,
-            # self.coord.theta
-        # ]
 
-    # def as_dataframe(self):
-    #     return pd.DataFrame(
-    #         [self.type],
-    #         # [self.coord.distance],
-    #         # [self.coord.theta],
-    #     )
-
-
-class SnakeVision(object):
+class BotVision(object):
     def __init__(self, snake):
         self.snake = snake
         self.elements = [[]]
     
     def update(self):
         self.elements = self._update_tiles_full_vision()
-        print(self.as_dataframe().to_string(index=False))
+        # print(self.as_dataframe().to_string(index=False))
     
     def as_matrix(self):
         return self.elements
@@ -525,12 +524,12 @@ class SnakeVision(object):
                             if self.snake.contains_element(element):
                                 elem_type = "self_head"
                             else:
-                                elem_type = "wall"
+                                elem_type = "head"
                         case 'tail':
                             if self.snake.contains_element(element):
                                 elem_type = "self_tail"
                             else:
-                                elem_type = "wall"
+                                elem_type = "tail"
                         case 'wall':
                             elem_type = 'wall'
                         case 'food':

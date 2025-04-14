@@ -2,6 +2,7 @@ import os
 from tkinter import *
 from time import sleep
 from . import elements as elm
+from . import ai as ai
 from random import randint
 import pandas as pd
 
@@ -20,13 +21,6 @@ BLOCK_SIZE = 10
 
 SCORE_OFFSET = 30
 
-DIR_MAP = {
-    0: 'left',
-    1: 'right',
-    2: 'up',
-    3: 'down'
-}
-
 class GameOver(Exception):
     pass
 
@@ -36,17 +30,17 @@ class HumanBind(object):
         self.name = 'player'
 
 
-
 class Bot(object):
-    def __init__(self, name="bot"):
+    def __init__(self, game, name: str, ai_parameters: list):
+        self.game = game
         self.name = name
         self.snake = None
+        self.ai = ai.BotAI(game, ai_parameters)
 
     def take_turn(self):
-        dir_index = randint(0, len(DIR_MAP.keys()) - 1)
-        self.snake.next_dir = DIR_MAP[dir_index]
-
-        return self.snake.next_dir
+        choice = self.ai.choose_action(self.snake.vision).value
+        self.snake.next_dir = choice
+        return choice
 
     @property
     def info(self):
@@ -174,9 +168,16 @@ class Game(object):
             self.add_wall((size_x-1, i))
 
         for i in range(int(bot_snakes)):
-            bot = Bot(name='aa')
+            ai_parameters = []
+            bot = Bot(self, f'bot_{i}', ai_parameters)
+            start_x = randint(0, self.size_x-1)
+            start_y = randint(0, self.size_y-1)
+            while self.element_at(start_x, start_y) != None:
+                start_x = randint(0, self.size_x-1)
+                start_y = randint(0, self.size_y-1)
+
             self.add_snake(
-                i * 3, i * 3,
+                start_x, start_y,
                 bot=bot,
             )
 
@@ -207,7 +208,7 @@ class Game(object):
 
         return M
 
-    def element_at(self, x, y):
+    def element_at(self, x: int, y: int):
         elem_id = self.map.on_position(x, y)
 
         if elem_id == 0:
