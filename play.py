@@ -91,7 +91,3 @@ if __name__ == '__main__':
     )
 
     game.play()
-
-    if not args['no_output']:
-        print(game.game_state.to_string(index=False))
-

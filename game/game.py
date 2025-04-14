@@ -403,7 +403,7 @@ class Game(object):
         self.map.print()
 
     def tick(self):
-        # self.clear_term()
+        self.clear_term()
         print("\n")
         print(self.game_state.to_string(index=False))
         self.clear_screen()

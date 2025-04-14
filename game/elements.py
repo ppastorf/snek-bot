@@ -1,6 +1,7 @@
 import pandas as pd
 import math
 from random import randint
+import pprint
 
 ELEMENT_SIZE = 10
 DEFAULT_COLOR = "#aaaaaa"
@@ -114,7 +115,6 @@ class Wall(Element):
 
 
 class SnakeTail(Element):
-
     def __init__(
             self,
             master,
@@ -163,7 +163,6 @@ class SnakeTail(Element):
 
 
 class SnakeHead(Element):
-
     def __init__(
             self,
             master,
@@ -240,7 +239,7 @@ class Snake(object):
         self.next_dir = start_dir
 
         self.head = SnakeHead(self, start_x, start_y)
-        self.vision = SnakeVision(self, VISION_DEPTH)
+        self.vision = SnakeVision(self)
         self.tail = []
         self.turns = 0
         self.time_alive = 0.0
@@ -340,6 +339,20 @@ class Snake(object):
 
         self.vision.update()
 
+    def contains_element(self, element: Element):
+        if element == None:
+            return False
+
+        if self.head.elem_id == element.elem_id:
+            return True
+
+        for part in self.tail:
+            if part.elem_id == element.elem_id:
+                return True
+        
+        return False
+
+
     @property
     def tail_length(self):
         return len(self.tail)
@@ -382,6 +395,23 @@ class Snake(object):
         self.next_dir = direction
 
 
+class SnakeDecision:
+    _actions_map = {
+        'left': 'L',
+        'right': 'R',
+        # 'up': 'U',
+        # 'down': 'D'
+    }
+
+    @classmethod
+    def actions_vec(cls):
+        return list(cls._actions_map.values())
+
+    @classmethod
+    def n_actions(cls):
+        return len(cls._actions_map.values())
+
+
 class PolarCoordinates(object):
     def __init__(self, center_x, center_y, point_x, point_y):
         distance, theta = self._calc(center_x, center_y, point_x, point_y)
@@ -397,47 +427,64 @@ class PolarCoordinates(object):
 
 class VisionElement(object):
     type_map = {
-        'food': 1,
-        'tail': 2,
-        'head': 3,
-        'wall': 4,
+        'food': 2,
+        'self_head': 3,
+        'self_tail': 4,
+        'wall': 5,
     }
     def __init__(self, snake, type, pos_x, pos_y):
         self.snake = snake
         self.color = VISION_COLOR
         self.size  = ELEMENT_SIZE
-        self.type  = self.type_map.get(type, 0)
+        self.type  = self.type_map.get(type, 1)
         self.coord = PolarCoordinates(self.snake.head.pos_x, self.snake.head.pos_y, pos_x, pos_y)
 
+    def __repr__(self):
+        return f"{self.type}"
+
+    def __str__(self):
+        return f"{self.type}"
+
     @property
-    def as_dataframe(self):
-        return pd.DataFrame({
-            'type': [self.type],
-            'r': [self.coord.distance],
-            'theta': [self.coord.theta],
-        })
+    def value(self):
+        return self.type
+        # return [
+            # self.type,
+            # self.coord.distance,
+            # self.coord.theta
+        # ]
+
+    # def as_dataframe(self):
+    #     return pd.DataFrame(
+    #         [self.type],
+    #         # [self.coord.distance],
+    #         # [self.coord.theta],
+    #     )
 
 
 class SnakeVision(object):
-    def __init__(self, snake, depth):
+    def __init__(self, snake):
         self.snake = snake
-        self.depth = 100
-        self.elements = []
+        self.elements = [[]]
     
     def update(self):
-        self.elements = self._update_tiles(self.snake.head.pos_x, self.snake.head.pos_y, self.snake.direction, self.depth)
-        # print(self.as_dataframe.to_string(index=False))
+        self.elements = self._update_tiles_full_vision()
+        print(self.as_dataframe().to_string(index=False))
     
-    @property
+    def as_matrix(self):
+        return self.elements
+
     def as_dataframe(self):
-        if len(self.elements):
-            return pd.concat([e.as_dataframe for e in self.elements], ignore_index=True)
+        if len(self.elements) and len(self.elements[0]):
+            return pd.DataFrame([[cell.value for cell in row] for row in self.elements]).T
         else:
             return pd.DataFrame()
 
-    def _update_tiles(self, ax, ay, direction, depth):
+    def _update_tiles_cone_vision(self, ax, ay, direction, depth):
+        cone_vision_depth = 100
         elements = []
-        for d in range(1, depth + 1):
+        for d in range(1, cone_vision_depth + 1):
+            curr_depth_elems = []
             for offset in range(-d + 1, d):
                 if direction == 'up':
                     px, py = ax + offset, ay - d
@@ -460,5 +507,38 @@ class SnakeVision(object):
                         elem_type = "clear"
 
                     ve = VisionElement(self.snake, elem_type, px, py)
-                    elements.append(ve)
+                    curr_depth_elems.append(ve)
+            if len(curr_depth_elems):
+                elements.append(curr_depth_elems)
+
+        return elements
+
+    def _update_tiles_full_vision(self):
+        elements = []
+        for px in range(0, self.snake.game.size_x):
+            row_elements = []
+            for py in range(0, self.snake.game.size_y):
+                element = self.snake.game.element_at(px, py)
+                if element != None:
+                    match element.elem_type:
+                        case 'head':
+                            if self.snake.contains_element(element):
+                                elem_type = "self_head"
+                            else:
+                                elem_type = "wall"
+                        case 'tail':
+                            if self.snake.contains_element(element):
+                                elem_type = "self_tail"
+                            else:
+                                elem_type = "wall"
+                        case 'wall':
+                            elem_type = 'wall'
+                        case 'food':
+                            elem_type = 'food'
+                else:
+                    elem_type = "clear"
+                ve = VisionElement(self.snake, elem_type, px, py)
+                row_elements.append(ve)
+            elements.append(row_elements)
+
         return elements
