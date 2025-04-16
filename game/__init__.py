@@ -1,2 +1,2 @@
-from .game import Game
+from .game import *
 from .elements import *

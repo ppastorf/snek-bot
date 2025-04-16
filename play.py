@@ -1,4 +1,4 @@
-from game import Game
+from game import Game, Bot
 from random import randint
 import pandas as pd
 import argparse
@@ -76,18 +76,32 @@ def get_args():
 
 if __name__ == '__main__':
     args = get_args()
-    game = Game(
-        collision=not args['no_collision'],
-        self_collision=not args['no_self_collision'],
-        debug=args['debug'],
-        size_x=int(args['map_x']),
-        size_y=int(args['map_y']),
-        tick_delay=float(args['tick_delay']),
-        show=not args['no_show'],
-        food=args['food'],
-        food_replace=not args['no_food_replace'],
-        bot_snakes=args['bot_snakes'],
-        human=args['human']
-    )
 
-    game.play()
+    bots = {}
+    for i in range(int(args['bot_snakes'])):
+        bot_name = f"{i}"
+        ai_parameters = [
+            0.99,  # GAMMA
+            0.9,   # EPS_START
+            0.05,  # EPS_END
+            0.005, # TAU
+        ]
+        vision_length = int(args['map_x']) * int(args['map_y'])
+        bot = Bot(bot_name, ai_parameters, vision_length)
+        bots.update({bot_name: bot})
+
+    while(True):
+        game = Game(
+            collision=not args['no_collision'],
+            self_collision=not args['no_self_collision'],
+            debug=args['debug'],
+            size_x=int(args['map_x']),
+            size_y=int(args['map_y']),
+            tick_delay=float(args['tick_delay']),
+            show=not args['no_show'],
+            food=args['food'],
+            food_replace=not args['no_food_replace'],
+            human=args['human'],
+            bots=bots
+        )
+        game.play()

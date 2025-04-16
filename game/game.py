@@ -3,6 +3,7 @@ from tkinter import *
 from time import sleep
 from . import elements as elm
 from . import ai as ai
+import pprint
 from random import randint
 import pandas as pd
 
@@ -27,20 +28,27 @@ class GameOver(Exception):
 
 class HumanBind(object):
     def __init__(self):
-        self.name = 'player'
+        self.name = 'human'
 
 
 class Bot(object):
-    def __init__(self, game, name: str, ai_parameters: list):
-        self.game = game
+    def __init__(self, name: str, ai_parameters: list, activations_length: int):
+        self.game = None
         self.name = name
         self.snake = None
-        self.ai = ai.BotAI(game, ai_parameters)
+        self.ai = ai.BotAI(self, ai_parameters, activations_length)
 
     def take_turn(self):
         choice = self.ai.choose_action(self.snake.vision).value
-        self.snake.next_dir = choice
-        return choice
+        if choice != 'pass':
+            next_dir = choice
+        else:
+            next_dir = self.snake.direction
+        self.snake.next_dir = next_dir
+        return next_dir
+        
+    def set_game(self, game):
+        self.game = game
 
     @property
     def info(self):
@@ -106,8 +114,8 @@ class Game(object):
             debug=False,
             food=1,
             food_replace=True,
-            bot_snakes=0,
             human=True,
+            bots=[],
             win_title="Snake"):
 
         if show:
@@ -134,6 +142,7 @@ class Game(object):
         self.elem_count = 0
         self.elements = {}
         self.snakes = {}
+        self.bots = {}
 
         self.size_x = size_x
         self.size_y = size_y
@@ -146,7 +155,7 @@ class Game(object):
         self.collision = collision
         self.self_collision = self_collision
 
-        self.playtime = 0.0
+        self.playtime_ticks = 0
         self.should_run = True
 
         self.map = self.parse_map_file('file')
@@ -167,22 +176,12 @@ class Game(object):
             self.add_wall((0, i))
             self.add_wall((size_x-1, i))
 
-        for i in range(int(bot_snakes)):
-            ai_parameters = []
-            bot = Bot(self, f'bot_{i}', ai_parameters)
-            start_x = randint(0, self.size_x-1)
-            start_y = randint(0, self.size_y-1)
-            while self.element_at(start_x, start_y) != None:
-                start_x = randint(0, self.size_x-1)
-                start_y = randint(0, self.size_y-1)
-
-            self.add_snake(
-                start_x, start_y,
-                bot=bot,
-            )
+        for bot in bots.values():
+            self.add_bot_player(bot, 'random_pos')
 
         if human:
             snake = self.add_snake(
+                "H0",
                 int(self.size_x / 2), int(self.size_y / 2))
             self.bind_snake_to_keys(snake)
 
@@ -241,6 +240,7 @@ class Game(object):
 
     def add_snake(
             self,
+            name,
             start_x,
             start_y,
             bot=None,
@@ -253,12 +253,14 @@ class Game(object):
 
         snake = elm.Snake(
             self,
+            name,
             start_x,
             start_y,
             start_dir=direction,
             color=color,
             start_length=start_length
         )
+        
 
         self.snakes.update({
             snake.elem_id: snake
@@ -269,11 +271,26 @@ class Game(object):
 
         return snake
 
+    def add_bot_player(self, bot, pos):
+        if pos == 'random_pos':
+            pos_x, pos_y = self.rand_free_pos()
+        else:
+            pos_x, pos_y = pos
+        self.bots.update({bot.name: bot})
+        self.add_snake(
+            bot.name,
+            pos_x, pos_y,
+            bot=bot,
+        )
+        bot.set_game(self)
+        return bot
+
     def add_food(self, pos, replace=True):
         if pos == 'random_pos':
             pos_x, pos_y = self.rand_free_pos()
         else:
             pos_x, pos_y = pos
+        print(f"Creating new food at position {pos_x}, {pos_y}...")
         return elm.Food(self, pos_x, pos_y, replace=replace)
 
     def add_wall(self, pos):
@@ -297,7 +314,6 @@ class Game(object):
     def rand_free_pos(self):
         x = randint(*self.x_range)
         y = randint(*self.y_range)
-
         while self.map.on_position(x, y) != 0:
             x = randint(*self.x_range)
             y = randint(*self.y_range)
@@ -309,21 +325,36 @@ class Game(object):
             if s.is_alive:
                 s.update()
 
-    def show_snake_score(self, i, snake):
+    def show_snake_score(self, snake):
             screen_size_x, screen_size_y = self.screen_map_size()
 
-            text = "{}".format(snake.length)
-            text_x = (screen_size_x / (len(self.snakes) + 1)) * (i + 1)
-            text_y = screen_size_y + (SCORE_OFFSET / 2)
+            points = ":  {}".format(snake.length)
+            points_x = (screen_size_x / (len(self.snakes) + 1)) * (snake.index + 1)
+            points_y = screen_size_y + (SCORE_OFFSET / 2)
 
-            head_x = text_x - (len(text) + 20)
+            head_x = points_x - 20
             head_y = screen_size_y + (SCORE_OFFSET / 2) - (snake.head.size / 2)
 
-            self.show_element(snake.head, pos=(head_x, head_y))
 
+            if not snake.is_alive:
+                snake_name = "{} (X)".format(snake.index)
+            else:
+                if snake.bind.name == "human":
+                    snake_name = "{} (H)".format(snake.index)
+                else:
+                    snake_name = "{} (B)".format(snake.index)
+
+            snake_name_x = head_x - 20
+            snake_name_y = points_y
+
+            self.show_element(snake.head, pos=(head_x, head_y))
             self.canvas.create_text(
-                text_x, text_y,
-                text=text
+                snake_name_x, snake_name_y,
+                text=snake_name
+            )
+            self.canvas.create_text(
+                points_x, points_y,
+                text=points
             )
 
     def show_score(self):
@@ -342,7 +373,7 @@ class Game(object):
         )
 
         for i, snake in enumerate(self.snakes.values()):
-            self.show_snake_score(i, snake)
+            self.show_snake_score(snake)
 
     def screen_map_size(self):
         x_size = self.map.size_x * BLOCK_SIZE
@@ -353,7 +384,7 @@ class Game(object):
     def pos_on_screen(self, x, y):
         return x * BLOCK_SIZE, y * BLOCK_SIZE
 
-    def show_element(self, element, pos=None):
+    def show_element(self, element, pos=None, text=None):
         if pos is None:
             pos_x, pos_y = self.pos_on_screen(element.pos_x, element.pos_y)
         else:
@@ -365,12 +396,22 @@ class Game(object):
             pos_y + element.size,
             fill=element.color
         )
+        if text != None:
+            self.canvas.create_text(
+            pos_x + element.size/2,
+            pos_y + element.size/2,
+            text=text,
+            fill="#FFFFFF"
+            )
 
     def draw_screen(self):
         self.show_score()
 
         for e in self.elements.values():
-            self.show_element(e)
+            if e.elem_type == "head":
+                self.show_element(e, text=e.master.index)
+            else:
+                self.show_element(e)
 
         self.root.update_idletasks()
         self.root.update()
@@ -387,11 +428,11 @@ class Game(object):
             raise GameOver
 
     def print_debug_info(self):
-        food = [
-            e for e in self.elements.keys()
-            if self.elements[e].elem_type == 'food']
+
         print('food:')
-        print(food)
+        for e in self.elements.values():
+            if e.elem_type == 'food':
+                print(f"{e.elem_id} - [{e.pos_x}, {e.pos_y}]")
 
         print('snakes:')
         for s in self.snakes.values():
@@ -403,16 +444,21 @@ class Game(object):
 
         self.map.print()
 
+    def train_ai_components(self):
+        for bot in self.bots.values():
+            bot.ai.record_transition_and_train(bot.snake.vision)
+
     def tick(self):
-        self.clear_term()
-        print("\n")
-        print(self.game_state.to_string(index=False))
+        # self.clear_term()
         self.clear_screen()
         self.update_elements()
         self.check_if_game_ends()
+        self.draw_screen()
+        print(self.game_state.to_string(index=False))
         if self.debug:
             self.print_debug_info()
-        self.draw_screen()
+        self.playtime_ticks += 1
+        self.train_ai_components()
 
     def end_game(self, event):
         self.should_run = False

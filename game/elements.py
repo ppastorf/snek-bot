@@ -223,6 +223,7 @@ class Snake(object):
     def __init__(
             self,
             game,
+            name,
             start_x,
             start_y,
             start_dir='left',
@@ -230,6 +231,8 @@ class Snake(object):
             color=None):
 
         self.game = game
+        self.name = name
+        self.index = len(game.snakes.keys())
 
         self.color = color
         self.head_color = color
@@ -266,6 +269,7 @@ class Snake(object):
         new_dir = self.take_turn()
 
         opposite = {
+            "pass": "pass",
             "left": "right",
             "up": "down",
             "right": "left",
@@ -397,6 +401,7 @@ class Snake(object):
 
 class BotDecision(int):
     _actions_vec = [
+        'pass',
         'left',
         'right',
         'up',
@@ -462,7 +467,7 @@ class VisionElement(object):
         return self.type
 
 class BotVision(object):
-    def __init__(self, snake):
+    def __init__(self, snake: Snake):
         self.snake = snake
         self.elements = [[]]
     
@@ -474,9 +479,9 @@ class BotVision(object):
         return self.elements
 
     def as_dataframe(self):
-        if len(self.elements) and len(self.elements[0]):
+        try:
             return pd.DataFrame([[cell.value for cell in row] for row in self.elements]).T
-        else:
+        except:
             return pd.DataFrame()
 
     def _update_tiles_cone_vision(self, ax, ay, direction, depth):
