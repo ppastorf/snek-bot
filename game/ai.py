@@ -44,18 +44,21 @@ class ReplayMemory(object):
 
 
 class DQN(nn.Module):
-    def __init__(self, n_observations, n_actions):
+    def __init__(self, n_observations, n_actions, n_hiden_layers, hidden_layer_len):
         super(DQN, self).__init__()
-        self.layer1 = nn.Linear(n_observations, 128)
-        self.layer2 = nn.Linear(128, 128)
-        self.layer3 = nn.Linear(128, n_actions)
+        self.input_layer = nn.Linear(n_observations, hidden_layer_len)
+        self.hidden_layers = []
+        for i in range(n_hiden_layers):
+            self.hidden_layers.append(nn.Linear(hidden_layer_len, hidden_layer_len))
+        self.output_layer = nn.Linear(hidden_layer_len, n_actions)
 
     # Called with either one element to determine next action, or a batch
     # during optimization. Returns tensor([[left0exp,right0exp]...]).
     def forward(self, x):
-        x = F.relu(self.layer1(x))
-        x = F.relu(self.layer2(x))
-        return self.layer3(x)
+        x = F.relu(self.input_layer(x))
+        for layer in self.hidden_layers:
+            x = F.relu(layer(x))
+        return self.output_layer(x)
 
 
 class BotAI(object):
@@ -68,31 +71,39 @@ class BotAI(object):
             "mps" if torch.backends.mps.is_available() else
             "cpu"
         )
-        self.gamma = parameters[0]
-        self.eps_start = parameters[1]
-        self.eps_end = parameters[2]
-        self.tau = parameters[3]
+        self.gamma = 0.99
+        self.eps_start = 0.9
+        self.eps_end = 0.05
+        self.tau = 0.005
         self.batch_size = 128
         self.eps_decay = 1000
         self.lr = 1e-4
+        self.n_hidden_layers = 4
+        self.hidden_layer_len = 128
+        self.food_reward = 2
+        self.playtime_reward = 0.1
 
-        self.replay_memory_size = 10000
-        self.memory = ReplayMemory(self.replay_memory_size)
         self.n_inputs = activations_length
         self.n_actions = elm.BotDecision.n_actions()
 
         self._last_state  = _get_empty_tensor(self.device, self.n_inputs)
         self._last_action = _get_empty_tensor(self.device, 1)
 
+        self.replay_memory_size = 10000
+        self.memory = ReplayMemory(self.replay_memory_size)
 
         self.policy_net = DQN(
             self.n_inputs, 
-            self.n_actions
+            self.n_actions,
+            self.n_hidden_layers,
+            self.hidden_layer_len
         ).to(self.device)
 
         self.target_net = DQN(
             self.n_inputs, 
-            self.n_actions
+            self.n_actions,
+            self.n_hidden_layers,
+            self.hidden_layer_len
         ).to(self.device)
 
         self.target_net.load_state_dict(self.policy_net.state_dict())
@@ -175,7 +186,7 @@ class BotAI(object):
             next_state = torch.tensor(activations, dtype=torch.float32, device=self.device).unsqueeze(0)
 
         # record transition function and reward
-        reward_value = (self.bot.snake.length * 5.0) + (self.bot.game.playtime_ticks * 0.01)
+        reward_value = (self.bot.snake.length * self.food_reward) + (self.bot.game.playtime_ticks * self.playtime_reward)
         reward_tensor = torch.tensor([reward_value], device=self.device)
         self.memory.push(self._last_state, self._last_action, next_state, reward_tensor)
         

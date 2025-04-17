@@ -39,10 +39,10 @@ def get_args():
         default=50)
 
     argparser.add_argument(
-        '--tick-delay',
+        '--tick-rate',
         action='store',
-        help='TIme between every game tick in seconds',
-        default=0.04)
+        help='How many game ticks per second',
+        default=30)
 
     argparser.add_argument(
         '--map-y',
@@ -99,7 +99,7 @@ if __name__ == '__main__':
             debug=args['debug'],
             size_x=int(args['map_x']),
             size_y=int(args['map_y']),
-            tick_delay=float(args['tick_delay']),
+            tick_rate=float(args['tick_rate']),
             show=not args['no_show'],
             food=args['food'],
             food_replace=not args['no_food_replace'],

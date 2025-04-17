@@ -11,7 +11,7 @@ import pandas as pd
 DEFAULT_X = 50
 DEFAULT_Y = 50
 
-TICK_DELAY = 0.04
+TICK_RATE = 60
 
 ELEMENT_SIZE = 10
 DEFAULT_SIZE = 10
@@ -108,7 +108,7 @@ class Game(object):
             size_x=DEFAULT_X,
             size_y=DEFAULT_Y,
             show=True,
-            tick_delay=TICK_DELAY,
+            tick_rate=TICK_RATE,
             collision=True,
             self_collision=True,
             debug=False,
@@ -150,7 +150,7 @@ class Game(object):
         self.root = root
         self.canvas = canvas
 
-        self.tick_delay = tick_delay
+        self.tick_delay = 1 / tick_rate
 
         self.collision = collision
         self.self_collision = self_collision
@@ -294,7 +294,6 @@ class Game(object):
             pos_x, pos_y = self.rand_free_pos()
         else:
             pos_x, pos_y = pos
-        print(f"Creating new food at position {pos_x}, {pos_y}...")
         return elm.Food(self, pos_x, pos_y, replace=replace)
 
     def add_wall(self, pos):
@@ -322,7 +321,6 @@ class Game(object):
             x = randint(*self.x_range)
             y = randint(*self.y_range)
 
-        print(f"position {x},{y} is free")
         return x, y
 
     def update_elements(self):
@@ -454,7 +452,7 @@ class Game(object):
             bot.ai.record_transition_and_train(bot.snake.vision)
 
     def tick(self):
-        # self.clear_term()
+        self.clear_term()
         self.clear_screen()
         self.update_elements()
         self.check_if_game_ends()
