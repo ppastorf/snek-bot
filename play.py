@@ -90,7 +90,9 @@ if __name__ == '__main__':
         bot = Bot(bot_name, ai_parameters, vision_length)
         bots.update({bot_name: bot})
 
+    i = 0
     while(True):
+        print(f"Game ${i}:")
         game = Game(
             collision=not args['no_collision'],
             self_collision=not args['no_self_collision'],

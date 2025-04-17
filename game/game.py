@@ -71,7 +71,7 @@ class Map():
         try:
             element = self.board[x][y]
         except IndexError:
-            element = 0
+            raise Exception(f"ERROR: could not get element at {x}, {y}: out of game board")
 
         return element
 
@@ -165,9 +165,7 @@ class Game(object):
 
         self.food = food
 
-        for i in range(int(food)):
-            self.add_food('random_pos', replace=food_replace)
-
+        ## walls
         for i in range(self.size_x):
             self.add_wall((i, 0))
             self.add_wall((i, size_y-1))
@@ -176,14 +174,20 @@ class Game(object):
             self.add_wall((0, i))
             self.add_wall((size_x-1, i))
 
+        ## bots
         for bot in bots.values():
             self.add_bot_player(bot, 'random_pos')
 
+        ## player
         if human:
             snake = self.add_snake(
                 "H0",
                 int(self.size_x / 2), int(self.size_y / 2))
             self.bind_snake_to_keys(snake)
+
+        ## food
+        for i in range(int(food)):
+            self.add_food('random_pos', replace=food_replace)
 
     def new_color(self):
         COLORS = [
@@ -318,6 +322,7 @@ class Game(object):
             x = randint(*self.x_range)
             y = randint(*self.y_range)
 
+        print(f"position {x},{y} is free")
         return x, y
 
     def update_elements(self):
