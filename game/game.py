@@ -150,8 +150,11 @@ class Game(object):
 
         self.root = root
         self.canvas = canvas
-
-        self.tick_delay = 1 / tick_rate
+        
+        if tick_rate == 0:
+            self.tick_delay = 0
+        else:
+            self.tick_delay = 1 / tick_rate
 
         self.collision = collision
         self.self_collision = self_collision

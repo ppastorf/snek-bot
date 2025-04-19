@@ -25,7 +25,7 @@ Transition = namedtuple('Transition',
 
 
 def _get_empty_tensor(device, length):
-    return torch.tensor(pd.DataFrame(np.zeros((length))).values.flatten(), dtype=torch.float32, device=device).unsqueeze(0)
+    return torch.tensor(pd.DataFrame(np.zeros(length)).values.flatten(), dtype=torch.float32, device=device).unsqueeze(0)
 
 
 class ReplayMemory(object):
@@ -64,6 +64,22 @@ class DQN(nn.Module):
 
 
 class BotAI(object):
+
+    '''
+    Reward calculation
+    '''
+    @property
+    def _reward(self):
+        food_reward = 10
+        playtime_reward = 1
+        death_penalty = 10
+        if self.bot.snake.is_alive:
+            return (
+                ((self._score - self._last_score) * food_reward) + playtime_reward
+            )
+        else:
+            return - death_penalty * self._score
+
     def __init__(self, bot, parameters: list, activations_length: int):
         self.bot = bot
 
@@ -73,31 +89,54 @@ class BotAI(object):
             "mps" if torch.backends.mps.is_available() else
             "cpu"
         )
-        self.gamma = 0.99
+
+        '''
+        Gamma: discount factor (dicounted future return)
+        - γ E [0,1]
+        - typically between 0.99 and 0.97
+        - penalize agents that take many actions before receiving positive reward
+        -   high value: little penalization
+        -   low value:  higher penalization
+        def _discounted_rewards(rewards):
+            discounted_returns = [0 for _ in rewards]
+            discounted_returns[-1] = rewards[-1]
+            for t in range(len(rewards)-2, -1, -1):
+                discounted_returns[t] = rewards[t] + discounted_returns[t+1]*self.gamma
+            return discounted_returns
+        '''
+        self.gamma = 0.1
+
+        '''
+        Epsilon
+        '''
         self.eps_start = 0.9
         self.eps_end = 0.05
         self.eps_decay = 1000
+
         self.tau = 0.005
         self.batch_size = 128
         self.lr = 1e-4
-        self.n_hidden_layers = 2
-        self.hidden_layer_len = 128
-        self.food_reward = 10
-        self.playtime_reward = 1
-        self.death_penalty = 10
 
-        self.replay_memory_size = 10000
-
+        '''
+        Neural Network layers 
+        '''
         self.n_inputs = activations_length
         self.n_actions = elm.BotDecision.n_actions()
+        self.n_hidden_layers = 2
+        self.hidden_layer_len = 128
 
+
+        # dummy values for initialization
         self._last_state  = _get_empty_tensor(self.device, self.n_inputs)
         self._last_action = _get_empty_tensor(self.device, 1)
         self._last_score = 0
         self._score = 0
 
+        # replay memory
+        self.replay_memory_size = 10000
         self.memory = ReplayMemory(self.replay_memory_size)
 
+        # policy network
         self.policy_net = DQN(
             self.n_inputs, 
             self.n_actions,
@@ -105,14 +144,16 @@ class BotAI(object):
             self.hidden_layer_len
         ).to(self.device)
 
+        # target network
         self.target_net = DQN(
             self.n_inputs, 
             self.n_actions,
             self.n_hidden_layers,
             self.hidden_layer_len
         ).to(self.device)
-
         self.target_net.load_state_dict(self.policy_net.state_dict())
+
+        # used for optimization
         self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=self.lr, amsgrad=True)
         self.steps_done = 0
         self.episode_durations = []
@@ -167,7 +208,6 @@ class BotAI(object):
         for key in policy_dict:
             target_dict[key] = policy_dict[key] * self
 
-
     def choose_action(self, vision: elm.BotVision) -> elm.BotDecision:
         activations = vision.as_dataframe().values.flatten()
         if not len(activations):
@@ -184,15 +224,6 @@ class BotAI(object):
         self._last_action = action_tensor  # Save for training step
 
         return elm.BotDecision(action_tensor.item())
-
-    @property
-    def _reward(self):
-        if self.bot.snake.is_alive:
-            return (
-                ((self._score - self._last_score) * self.food_reward) + self.playtime_reward
-            )
-        else:
-            return - self.death_penalty * self._score
 
     def record_transition_and_train(self, vision: elm.BotVision):
         activations = vision.as_dataframe().values.flatten()

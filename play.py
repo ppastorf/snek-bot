@@ -1,6 +1,7 @@
 from game import Game, Bot
 from random import randint
 import pandas as pd
+import matplotlib.pyplot as plt
 import argparse
 import sys
 import os
@@ -11,7 +12,7 @@ def get_args():
     argparser.add_argument(
         '--bot-snakes',
         help='Number of bot-controlled snakes',
-        default=0)
+        default=1)
 
     argparser.add_argument(
         '--food',
@@ -42,13 +43,19 @@ def get_args():
     argparser.add_argument(
         '--training-tick-rate',
         action='store',
-        help='How many game ticks per second',
+        help='How many game ticks per second during training',
         default=6000)
+
+    argparser.add_argument(
+        '--training-episodes',
+        action='store',
+        help='How many training episodes',
+        default=1000)
 
     argparser.add_argument(
         '--performance-tick-rate',
         action='store',
-        help='How many game ticks per second',
+        help='How many game ticks per second on performance',
         default=30)
 
     argparser.add_argument(
@@ -98,12 +105,11 @@ if __name__ == '__main__':
         bots.update({bot_name: bot})
 
     # training
-
-    i = 0
     game_points = {}
-    while(True):
+    i = 0
+    while i < int(args['training_episodes']):
         try:
-            print(f"Training iteration {i}:")
+            print(f"Training episode {i}:")
             game = Game(
                 collision=not args['no_collision'],
                 self_collision=not args['no_self_collision'],
@@ -121,18 +127,18 @@ if __name__ == '__main__':
             game.play()
             game.print_game_state()
             game_points.update({i: {
+                'episode': i,
                 'score': list(game.snakes.values())[0].score,
                 'time': game.playtime_ticks
             }})
             print(game_points[i])
             i += 1
         except KeyboardInterrupt:
-            print(F"Training Done")
             break
     
     # example
     try:
-        print(f"Performance after {i} training iterations:")
+        print(f"Performance after {i} training episodes:")
         game = Game(
             collision=not args['no_collision'],
             self_collision=not args['no_self_collision'],
@@ -150,10 +156,32 @@ if __name__ == '__main__':
         game.play()
         game.print_game_state()
         game_points.update({i: {
+            'episode': i,
             'score': list(game.snakes.values())[0].score,
             'time': game.playtime_ticks
         }})
         print(game_points[i])
     except KeyboardInterrupt:
-        print(F"Performance done")
         sys.exit(0)
+
+    print(f"Training Done")
+    n_best_scores = 5
+    best_scores = sorted(game_points.values(), key=lambda x: x['score'], reverse=True)[:n_best_scores]
+    print(f"Best scores:")
+    for score in best_scores:
+        print(score)
+
+    x1 = [d['episode'] for d in game_points.values()]
+    y1 = [d['time'] for d in game_points.values()]
+    plt.plot(x1, y1, marker='.', label='Time')
+
+    x2 = [d['episode'] for d in game_points.values()]
+    y2 = [d['score'] for d in game_points.values()]
+    plt.plot(x2, y2, marker='.', label='Score')
+
+    plt.xlabel("Episode")
+    plt.ylabel("Value")
+    plt.title(f"Snek bot after {i} training episodes")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
