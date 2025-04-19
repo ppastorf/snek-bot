@@ -10,6 +10,8 @@ VISION_COLOR = "#40ff3d"
 FOOD_COLOR = "#006600"
 WALL_COLOR = "black"
 VISION_DEPTH = 100
+INITIAL_TAIL_LENGTH = 1
+
 
 class Element(object):
     def __init__(
@@ -227,7 +229,7 @@ class Snake(object):
             start_x,
             start_y,
             start_dir='left',
-            start_length=1,
+            start_length=INITIAL_TAIL_LENGTH,
             color=None):
 
         self.game = game
@@ -356,7 +358,6 @@ class Snake(object):
         
         return False
 
-
     @property
     def tail_length(self):
         return len(self.tail)
@@ -364,6 +365,10 @@ class Snake(object):
     @property
     def length(self):
         return self.tail_length + 1
+    
+    @property
+    def score(self):
+        return self.tail_length - INITIAL_TAIL_LENGTH
 
     @property
     def pos_y(self):

@@ -116,6 +116,7 @@ class Game(object):
             food_replace=True,
             human=True,
             bots=[],
+            bots_learn=True,
             win_title="Snake"):
 
         if show:
@@ -154,6 +155,7 @@ class Game(object):
 
         self.collision = collision
         self.self_collision = self_collision
+        self.bots_learn = bots_learn
 
         self.playtime_ticks = 0
         self.should_run = True
@@ -188,6 +190,9 @@ class Game(object):
         ## food
         for i in range(int(food)):
             self.add_food('random_pos', replace=food_replace)
+        
+        if len(self.snakes.keys()) == 0:
+            self.end_game()
 
     def new_color(self):
         COLORS = [
@@ -265,7 +270,6 @@ class Game(object):
             start_length=start_length
         )
         
-
         self.snakes.update({
             snake.elem_id: snake
         })
@@ -451,19 +455,23 @@ class Game(object):
         for bot in self.bots.values():
             bot.ai.record_transition_and_train(bot.snake.vision)
 
+    def print_game_state(self):
+        print(self.game_state.to_string(index=False))
+
     def tick(self):
-        self.clear_term()
+        # self.clear_term()
         self.clear_screen()
         self.update_elements()
-        self.check_if_game_ends()
         self.draw_screen()
-        print(self.game_state.to_string(index=False))
+        
         if self.debug:
             self.print_debug_info()
         self.playtime_ticks += 1
-        self.train_ai_components()
+        if self.bots_learn:
+            self.train_ai_components()
+        self.check_if_game_ends()
 
-    def end_game(self, event):
+    def end_game(self, event=None):
         self.should_run = False
 
     def end(self):
@@ -483,7 +491,7 @@ class Game(object):
             try:
                 self.tick()
                 sleep(self.tick_delay)
-            except GameOver:
-                self.should_run = False
+            except(GameOver):
+                self.end_game()
 
         self.end()

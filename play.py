@@ -2,6 +2,7 @@ from game import Game, Bot
 from random import randint
 import pandas as pd
 import argparse
+import sys
 import os
 
 
@@ -15,7 +16,7 @@ def get_args():
     argparser.add_argument(
         '--food',
         help='Number of initial food',
-        default=300)
+        default=1)
 
     argparser.add_argument(
         '--no-self-collision',
@@ -39,7 +40,13 @@ def get_args():
         default=50)
 
     argparser.add_argument(
-        '--tick-rate',
+        '--training-tick-rate',
+        action='store',
+        help='How many game ticks per second',
+        default=6000)
+
+    argparser.add_argument(
+        '--performance-tick-rate',
         action='store',
         help='How many game ticks per second',
         default=30)
@@ -61,9 +68,9 @@ def get_args():
         help='Print debug info')
 
     argparser.add_argument(
-        '--no-show',
+        '--training-show',
         action='store_true',
-        help='Do not show the game interface')
+        help='Show the game interface during training')
 
     argparser.add_argument(
         '--no-output',
@@ -90,20 +97,63 @@ if __name__ == '__main__':
         bot = Bot(bot_name, ai_parameters, vision_length)
         bots.update({bot_name: bot})
 
+    # training
+
     i = 0
+    game_points = {}
     while(True):
-        print(f"Game ${i}:")
+        try:
+            print(f"Training iteration {i}:")
+            game = Game(
+                collision=not args['no_collision'],
+                self_collision=not args['no_self_collision'],
+                debug=args['debug'],
+                size_x=int(args['map_x']),
+                size_y=int(args['map_y']),
+                tick_rate=float(args['training_tick_rate']),
+                show=args['training_show'],
+                food=args['food'],
+                food_replace=not args['no_food_replace'],
+                human=args['human'],
+                bots=bots,
+                bots_learn=True
+            )
+            game.play()
+            game.print_game_state()
+            game_points.update({i: {
+                'score': list(game.snakes.values())[0].score,
+                'time': game.playtime_ticks
+            }})
+            print(game_points[i])
+            i += 1
+        except KeyboardInterrupt:
+            print(F"Training Done")
+            break
+    
+    # example
+    try:
+        print(f"Performance after {i} training iterations:")
         game = Game(
             collision=not args['no_collision'],
             self_collision=not args['no_self_collision'],
             debug=args['debug'],
             size_x=int(args['map_x']),
             size_y=int(args['map_y']),
-            tick_rate=float(args['tick_rate']),
-            show=not args['no_show'],
+            tick_rate=float(args['performance_tick_rate']),
+            show=True,
             food=args['food'],
             food_replace=not args['no_food_replace'],
             human=args['human'],
-            bots=bots
+            bots=bots,
+            bots_learn=False
         )
         game.play()
+        game.print_game_state()
+        game_points.update({i: {
+            'score': list(game.snakes.values())[0].score,
+            'time': game.playtime_ticks
+        }})
+        print(game_points[i])
+    except KeyboardInterrupt:
+        print(F"Performance done")
+        sys.exit(0)

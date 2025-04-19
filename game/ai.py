@@ -47,9 +47,11 @@ class DQN(nn.Module):
     def __init__(self, n_observations, n_actions, n_hiden_layers, hidden_layer_len):
         super(DQN, self).__init__()
         self.input_layer = nn.Linear(n_observations, hidden_layer_len)
+
         self.hidden_layers = []
         for i in range(n_hiden_layers):
             self.hidden_layers.append(nn.Linear(hidden_layer_len, hidden_layer_len))
+
         self.output_layer = nn.Linear(hidden_layer_len, n_actions)
 
     # Called with either one element to determine next action, or a batch
@@ -74,22 +76,26 @@ class BotAI(object):
         self.gamma = 0.99
         self.eps_start = 0.9
         self.eps_end = 0.05
+        self.eps_decay = 1000
         self.tau = 0.005
         self.batch_size = 128
-        self.eps_decay = 1000
         self.lr = 1e-4
-        self.n_hidden_layers = 4
+        self.n_hidden_layers = 2
         self.hidden_layer_len = 128
-        self.food_reward = 2
-        self.playtime_reward = 0.1
+        self.food_reward = 10
+        self.playtime_reward = 1
+        self.death_penalty = 10
+
+        self.replay_memory_size = 10000
 
         self.n_inputs = activations_length
         self.n_actions = elm.BotDecision.n_actions()
 
         self._last_state  = _get_empty_tensor(self.device, self.n_inputs)
         self._last_action = _get_empty_tensor(self.device, 1)
+        self._last_score = 0
+        self._score = 0
 
-        self.replay_memory_size = 10000
         self.memory = ReplayMemory(self.replay_memory_size)
 
         self.policy_net = DQN(
@@ -172,11 +178,21 @@ class BotAI(object):
         # Save state for later use
         state = torch.tensor(activations, dtype=torch.float32, device=self.device).unsqueeze(0)
         self._last_state = state
+        self._last_score = self.bot.snake.score
 
         action_tensor = self._model_choose_action(state)
         self._last_action = action_tensor  # Save for training step
 
         return elm.BotDecision(action_tensor.item())
+
+    @property
+    def _reward(self):
+        if self.bot.snake.is_alive:
+            return (
+                ((self._score - self._last_score) * self.food_reward) + self.playtime_reward
+            )
+        else:
+            return - self.death_penalty * self._score
 
     def record_transition_and_train(self, vision: elm.BotVision):
         activations = vision.as_dataframe().values.flatten()
@@ -185,13 +201,13 @@ class BotAI(object):
         else:
             next_state = torch.tensor(activations, dtype=torch.float32, device=self.device).unsqueeze(0)
 
-        # record transition function and reward
-        reward_value = (self.bot.snake.length * self.food_reward) + (self.bot.game.playtime_ticks * self.playtime_reward)
-        reward_tensor = torch.tensor([reward_value], device=self.device)
+        self._score = self.bot.snake.score
+        reward_tensor = torch.tensor([self._reward], device=self.device)
         self.memory.push(self._last_state, self._last_action, next_state, reward_tensor)
         
-        # optimize model
         try:
             self._optimize_model()
+        except KeyboardInterrupt:
+            raise
         except:
             pass
