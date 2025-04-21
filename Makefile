@@ -1,11 +1,6 @@
-install:
-	( \
-	  virtualenv -p python3 env; \
-	  source env/bin/activate; \
-	  pip3 install -r requirements.txt; \
-	)
-run:
-	( \
-	  source env/bin/activate; \
-	  python3 bot.py; \
-	)
+requirements-linux:
+	@pip install -r requirements.txt
+	@sudo apt install -y python3-tk
+
+requirements-windows:
+	@pip install -r requirements.txt

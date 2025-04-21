@@ -6,7 +6,6 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-import gymnasium as gym
 import math
 import random
 import matplotlib
@@ -54,8 +53,6 @@ class DQN(nn.Module):
 
         self.output_layer = nn.Linear(hidden_layer_len, n_actions)
 
-    # Called with either one element to determine next action, or a batch
-    # during optimization. Returns tensor([[left0exp,right0exp]...]).
     def forward(self, x):
         x = F.relu(self.input_layer(x))
         for layer in self.hidden_layers:
@@ -64,36 +61,34 @@ class DQN(nn.Module):
 
 
 class BotAI(object):
-
     '''
     Reward calculation
     '''
     @property
     def _reward(self):
-        food_reward = 10
-        playtime_reward = 1
-        death_penalty = 10
         if self.bot.snake.is_alive:
             return (
-                ((self._score - self._last_score) * food_reward) + playtime_reward
+                ((self._score - self._last_score) * self.food_reward) + self.playtime_reward
             )
         else:
-            return - death_penalty * self._score
+            return - self.death_penalty * self._score
 
     def __init__(self, bot, parameters: list, activations_length: int):
         self.bot = bot
 
-        ## parameters
         self.device = torch.device(
             "cuda" if torch.cuda.is_available() else
             "mps" if torch.backends.mps.is_available() else
             "cpu"
         )
+        self.food_reward = parameters[0]
+        self.playtime_reward = parameters[1]
+        self.death_penalty = parameters[2]
 
         '''
         Gamma: discount factor (dicounted future return)
-        - γ E [0,1]
-        - typically between 0.99 and 0.97
+        - γ ∈ [0,1]
+          - often between 0.97 and 0.99
         - penalize agents that take many actions before receiving positive reward
         -   high value: little penalization
         -   low value:  higher penalization
@@ -104,27 +99,53 @@ class BotAI(object):
                 discounted_returns[t] = rewards[t] + discounted_returns[t+1]*self.gamma
             return discounted_returns
         '''
-        self.gamma = 0.1
+        self.gamma = parameters[3]
 
         '''
-        Epsilon
+        Epsilon: exploration factor (annealed ε-greedy)
+          - often from 0.99 to 0.1 over 10,000 actions
+        - ε-start ∈ [0,1] (upper end)
+        - ε-end ∈ [0,1] (lower end)
+        - ε-decay ∈ ℕ (max number of actions to take exploration in consideration)
+        - probability that the agent takes a random action choice at a given scenario
+            - introduce exploring the environment to avoid optimizing to a local minimum
+        - varies over time from eps_start to eps_end over eps_decay actions
+            - we want to eplore more when we have less experience
+            - epslion decays over time
+        def epsilon_greedy_action_annealed(action_distribution, percentage, epsilon_start=1.0, epsilon_end=1e-2):
+            annealed_epsilon = (epsilon_start * (1.0 - percentage)) + (epsilon_end * percentage)
+            if random.random() < annealed_epsilon:
+                return np.argmax(np.random.random(action_distribution.shape))
+            else:
+                return np.argmax(action_distribution)
         '''
-        self.eps_start = 0.9
-        self.eps_end = 0.05
-        self.eps_decay = 1000
+        self.eps_start = parameters[4]
+        self.eps_end = parameters[5]
+        self.eps_decay = parameters[6]
 
-        self.tau = 0.005
-        self.batch_size = 128
-        self.lr = 1e-4
+        '''
+        Tau unused
+        '''
+        # self.tau = 0.005
+
+        '''
+        Learning rate (lr)
+        - lr ∈ [0,1e-1]
+          - often 1e-3
+        - controls how much the model updates its weights in response to the loss function during training
+          - small lr (eg. 1e-5)  = slow learning, stable, takes more time to converge
+          - large lr (eg. 1e-1 ) = fast learning, unstable, may take less time to converge
+        '''
+        self.learning_rate = parameters[7]
 
         '''
         Neural Network layers 
         '''
         self.n_inputs = activations_length
         self.n_actions = elm.BotDecision.n_actions()
-        self.n_hidden_layers = 2
-        self.hidden_layer_len = 128
-
+        self.n_hidden_layers = parameters[8]
+        self.hidden_layer_len = parameters[9]
+        self.batch_size = parameters[9]
 
         # dummy values for initialization
         self._last_state  = _get_empty_tensor(self.device, self.n_inputs)
@@ -133,7 +154,7 @@ class BotAI(object):
         self._score = 0
 
         # replay memory
-        self.replay_memory_size = 10000
+        self.replay_memory_size = 100000
         self.memory = ReplayMemory(self.replay_memory_size)
 
         # policy network
@@ -154,18 +175,17 @@ class BotAI(object):
         self.target_net.load_state_dict(self.policy_net.state_dict())
 
         # used for optimization
-        self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=self.lr, amsgrad=True)
+        self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=self.learning_rate, amsgrad=True)
         self.steps_done = 0
         self.episode_durations = []
 
-    def _random_action(self) -> elm.BotDecision:
-        return elm.BotDecision(random.randint(0, elm.BotDecision.n_actions()-1))
 
     def _model_choose_action(self, state: torch.Tensor):
+        # (annealed ε-greedy)
         sample = random.random()
-        eps_threshold = self.eps_end + (self.eps_start - self.eps_end) * \
-            math.exp(-1. * self.steps_done / self.eps_decay)
+        eps_threshold = self.eps_end + (self.eps_start - self.eps_end) * math.exp(-1. * self.steps_done / self.eps_decay)
         self.steps_done += 1
+
         if sample > eps_threshold:
             with torch.no_grad():
                 return self.policy_net(state).max(1).indices.view(1, 1)
