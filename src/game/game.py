@@ -1,10 +1,11 @@
+from src.game import elements as elm
+from src.ai import ai
+
 import os
 from tkinter import *
 from time import sleep
-from . import elements as elm
-from . import ai as ai
-import pprint
 from random import randint
+
 import pandas as pd
 
 
@@ -33,22 +34,28 @@ class HumanBind(object):
 
 class Bot(object):
     def __init__(self, name: str, ai_parameters: list, activations_length: int):
-        self.game = None
         self.name = name
+        self.game = None
         self.snake = None
+        self.ai_parameters = ai_parameters
         self.ai = ai.BotAI(self, ai_parameters, activations_length)
 
     def take_turn(self):
         choice = self.ai.choose_action(self.snake.vision).value
-        if choice != 'pass':
-            next_dir = choice
-        else:
+        if choice == 'pass':
             next_dir = self.snake.direction
-        self.snake.next_dir = next_dir
+        else:
+            next_dir = choice
+
+        # Set next dir
+        self.snake.set_next_dir(next_dir)
         return next_dir
         
     def set_game(self, game):
         self.game = game
+
+    def set_snake(self, snake):
+        self.snake = snake
 
     @property
     def info(self):
@@ -242,7 +249,8 @@ class Game(object):
         if snake.bind is not None:
             return
 
-        bot.snake = snake
+        bot.set_snake(snake)
+        bot.set_game(self)
         snake.bind = bot
         snake.take_turn = bot.take_turn
 
@@ -288,12 +296,13 @@ class Game(object):
         else:
             pos_x, pos_y = pos
         self.bots.update({bot.name: bot})
-        self.add_snake(
+        snake = self.add_snake(
             bot.name,
             pos_x, pos_y,
             bot=bot,
         )
         bot.set_game(self)
+        bot.set_snake(snake)
         return bot
 
     def add_food(self, pos, replace=True):
@@ -438,7 +447,6 @@ class Game(object):
             raise GameOver
 
     def print_debug_info(self):
-
         print('food:')
         for e in self.elements.values():
             if e.elem_type == 'food':
@@ -478,7 +486,6 @@ class Game(object):
         self.should_run = False
 
     def end(self):
-        sleep(0.3)
         self.canvas.destroy()
         self.root.destroy()
 
@@ -493,7 +500,8 @@ class Game(object):
         while self.should_run:
             try:
                 self.tick()
-                sleep(self.tick_delay)
+                if self.tick_delay != 0:
+                    sleep(self.tick_delay)
             except(GameOver):
                 self.end_game()
 

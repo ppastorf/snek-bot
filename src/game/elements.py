@@ -1,7 +1,6 @@
 import pandas as pd
 import math
 from random import randint
-import pprint
 
 ELEMENT_SIZE = 10
 DEFAULT_COLOR = "#aaaaaa"
@@ -358,6 +357,9 @@ class Snake(object):
         
         return False
 
+    def set_next_dir(self, next):
+        self.next_dir = next
+
     @property
     def tail_length(self):
         return len(self.tail)
@@ -401,7 +403,7 @@ class Snake(object):
 
     def keyboard_direction(self, event):
         direction = event.keysym.lower()
-        self.next_dir = direction
+        self.set_next_dir(direction)
 
 
 class BotDecision(int):
@@ -478,7 +480,6 @@ class BotVision(object):
     
     def update(self):
         self.elements = self._update_tiles_full_vision()
-        # print(self.as_dataframe().to_string(index=False))
     
     def as_matrix(self):
         return self.elements
